@@ -1,0 +1,336 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
+
+class RolePermissionSeeder extends Seeder
+{
+    public function run(): void
+    {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $crud      = ['viewAny', 'view', 'create', 'update', 'delete', 'restore', 'forceDelete'];
+        $readOnly  = ['viewAny', 'view'];
+        $readWrite = ['viewAny', 'view', 'create', 'update'];
+        $basicCrud = ['viewAny', 'view', 'create', 'update', 'delete'];
+
+        $roles = [
+
+            // ═══════════════════════════════════════════════════════════
+            // 🔱 SUPER ADMIN — full system access
+            // ═══════════════════════════════════════════════════════════
+            'super-admin' => '*',
+
+            // ═══════════════════════════════════════════════════════════
+            // 👑 ADMIN / OWNER
+            // ═══════════════════════════════════════════════════════════
+            'admin' => [
+
+                // ── Dashboard & Settings ──────────────────────────────
+                'dashboard'          => ['view'],
+                'setting'            => ['view', 'update'],
+                'activity-log'       => ['viewAny', 'view', 'export'],  // ✅ added export
+                'notification'       => $basicCrud,
+
+                // ── User Management ───────────────────────────────────
+                'user'               => array_merge($basicCrud, ['reset-password']),
+                'role'               => $readOnly,
+                'permission'         => $readOnly,
+
+                // ── Branch ────────────────────────────────────────────
+                'branch'             => $basicCrud,
+
+                // ── Doctors & Schedules ───────────────────────────────
+                'doctor'             => $basicCrud,
+                'doctor-schedule'    => $basicCrud,
+
+                // ── Appointments ──────────────────────────────────────
+                'appointment'        => array_merge($basicCrud, [
+                    'approve', 'reject', 'cancel', 'reschedule',
+                    'check-in', 'check-out', 'no-show', 'complete', 'update-status',
+                ]),
+                'recall'             => array_merge($basicCrud, ['send-reminder', 'mark-completed']),
+
+                // ── Patients ──────────────────────────────────────────
+                'patient'            => array_merge($basicCrud, ['export', 'merge', 'transfer-branch']), // ✅ added merge
+                'medical-profile'    => $basicCrud,
+                'medical-item'       => $basicCrud,
+                'medical-alert'      => $basicCrud,
+
+                // ── Clinical ──────────────────────────────────────────
+                'dental-chart'       => $basicCrud,
+                'clinical-note'      => array_merge($readOnly, ['finalize']),
+                'treatment'          => $basicCrud,
+                'treatment-plan'     => array_merge($basicCrud, ['send-to-patient', 'mark-completed']),
+                'prescription'       => array_merge($readOnly, ['print']),
+                'attachment'         => array_merge($basicCrud, ['download', 'upload']),
+                'consent-form'       => array_merge($basicCrud, ['send', 'void', 'print']),
+
+                // ── Lab Cases ─────────────────────────────────────────
+                'lab'                => $basicCrud,
+                'lab-case'           => array_merge($basicCrud, [
+                    'send', 'receive', 'quality-check', 'install', 'return',
+                ]),
+
+                // ── Financial ─────────────────────────────────────────
+                'invoice'            => array_merge($basicCrud, [
+                    'send', 'mark-paid', 'void', 'print', 'export', 'refund',
+                ]),
+                'payment'            => array_merge($basicCrud, [
+                    'refund', 'void', 'print-receipt', 'export',
+                ]),
+                'discount'           => $basicCrud,
+                'tax'                => $basicCrud,
+
+                // ── Inventory ─────────────────────────────────────────
+                'inventory'          => array_merge($basicCrud, [
+                    'adjust', 'transfer', 'stock-in', 'stock-out', 'export',
+                ]),
+                'inventory-category' => $basicCrud,
+                'supplier'           => $basicCrud,
+                'purchase-order'     => array_merge($basicCrud, ['approve', 'receive', 'cancel']),
+
+                // ── HR ────────────────────────────────────────────────
+                'employee'           => array_merge($basicCrud, ['import', 'export']),
+                'attendance'         => array_merge($basicCrud, ['check-in', 'check-out']),
+                'leave-request'      => array_merge($basicCrud, [
+                    'prepare', 'note', 'approve', 'receive', 'reject',
+                ]),
+                'payroll'            => array_merge($basicCrud, ['generate', 'approve', 'pay', 'export']),
+
+                // ── Landing Page ──────────────────────────────────────
+                'service'            => $basicCrud,
+                'gallery'            => $basicCrud,
+                'testimonial'        => array_merge($basicCrud, ['approve', 'reject']),
+                'announcement'       => array_merge($basicCrud, ['publish', 'unpublish']),
+                'faq'                => $basicCrud,
+
+                // ── Reports ───────────────────────────────────────────
+                'report'             => ['view', 'export'],
+                'analytics'          => ['view'],
+                'financial-report'   => ['view', 'export'],
+                'clinical-report'    => ['view', 'export'],
+                'inventory-report'   => ['view', 'export'],
+                'patient-report'     => ['view', 'export'],
+
+                // ── Communications ────────────────────────────────────
+                'sms'                => ['send', 'view', 'configure'],
+                'email'              => ['send', 'view', 'configure'],
+                'reminder'           => array_merge($basicCrud, ['send']),
+
+                // ── System ────────────────────────────────────────────
+                'backup'             => ['create', 'restore', 'download', 'delete'], // ✅ added
+            ],
+
+            // ═══════════════════════════════════════════════════════════
+            // 🩺 DENTIST — Clinical operations
+            // ═══════════════════════════════════════════════════════════
+            'dentist' => [
+
+                // ── Dashboard ─────────────────────────────────────────
+                'dashboard'        => ['view'],
+                'notification'     => ['viewAny', 'view', 'update'],
+
+                // ── Schedule ──────────────────────────────────────────
+                'doctor'           => $readOnly,
+                'doctor-schedule'  => $readOnly,
+
+                // ── Appointments ──────────────────────────────────────
+                'appointment'      => array_merge($readOnly, [
+                    'update', 'check-in', 'check-out', 'complete', 'no-show', 'update-status',
+                ]),
+
+                // ── Patients ──────────────────────────────────────────
+                'patient'          => $readOnly,
+                'medical-profile'  => $readWrite,
+                'medical-item'     => $readWrite,
+                'medical-alert'    => $readWrite,
+
+                // ── Clinical ──────────────────────────────────────────
+                'dental-chart'     => $basicCrud,
+                'clinical-note'    => array_merge($basicCrud, ['finalize', 'amend']),
+                'treatment'        => $readWrite,
+                'treatment-plan'   => array_merge($basicCrud, ['send-to-patient', 'mark-completed']),
+                'prescription'     => array_merge($basicCrud, ['print', 'send']),
+                'attachment'       => array_merge($basicCrud, ['download', 'upload']),
+                'consent-form'     => ['viewAny', 'view', 'create', 'send'],
+
+                // ── Lab Cases ─────────────────────────────────────────
+                'lab-case'         => array_merge($readOnly, [
+                    'create', 'send', 'receive', 'quality-check', 'install',
+                ]),
+
+                // ── Financial (read-only) ─────────────────────────────
+                'invoice'          => $readOnly,
+                'payment'          => $readOnly,
+
+                // ── Inventory (read-only) ─────────────────────────────
+                'inventory'        => $readOnly,
+
+                // ── Landing Page ──────────────────────────────────────
+                'service'          => $readOnly,
+                'gallery'          => $readOnly,
+
+                // ── HR (own records only) ─────────────────────────────
+                'attendance'       => ['viewAny', 'view', 'check-in', 'check-out'],
+                'leave-request'    => ['viewAny', 'view', 'create'],
+
+                // ── Reports ───────────────────────────────────────────
+                'clinical-report'  => ['view'],
+            ],
+
+            // ═══════════════════════════════════════════════════════════
+            // 👔 RECEPTIONIST — Front desk operations
+            // ═══════════════════════════════════════════════════════════
+            'receptionist' => [
+
+                // ── Dashboard ─────────────────────────────────────────
+                'dashboard'        => ['view'],
+                'notification'     => ['viewAny', 'view', 'update'],
+
+                // ── Appointments ──────────────────────────────────────
+                'appointment'      => array_merge($basicCrud, [
+                    'approve', 'reject', 'cancel', 'reschedule',
+                    'check-in', 'check-out', 'no-show', 'update-status',
+                ]),
+                'recall'           => array_merge($readWrite, ['send-reminder']),
+
+                // ── Patients ──────────────────────────────────────────
+                'patient'          => $basicCrud,
+                'medical-profile'  => $readWrite,
+                'medical-alert'    => $readOnly,
+
+                // ── Doctors & Schedules ───────────────────────────────
+                'doctor'           => $readOnly,
+                'doctor-schedule'  => $readOnly,
+
+                // ── Treatment Plans ───────────────────────────────────
+                'treatment-plan'   => array_merge($readOnly, ['send-to-patient']),
+
+                // ── Consent Forms ─────────────────────────────────────
+                'consent-form'     => array_merge($readOnly, ['send', 'print']),
+
+                // ── Financial ─────────────────────────────────────────
+                'invoice'          => array_merge($basicCrud, ['send', 'mark-paid', 'print']),
+                'payment'          => array_merge($basicCrud, ['print-receipt']),
+                'discount'         => $readOnly,
+
+                // ── Attachments ───────────────────────────────────────
+                'attachment'       => array_merge($readWrite, ['upload', 'download']),
+
+                // ── Inventory (read-only) ─────────────────────────────
+                'inventory'        => $readOnly,
+
+                // ── Landing Page ──────────────────────────────────────
+                'service'          => $readOnly,
+                'gallery'          => $readOnly,
+                'faq'              => $readOnly,
+
+                // ── HR (own records only) ─────────────────────────────
+                'attendance'       => ['viewAny', 'view', 'check-in', 'check-out'],
+                'leave-request'    => ['viewAny', 'view', 'create'],
+
+                // ── Communications ────────────────────────────────────
+                'sms'              => ['send', 'view'],
+                'email'            => ['send', 'view'],
+                'reminder'         => ['viewAny', 'view', 'send'],
+
+                // ── Reports ───────────────────────────────────────────
+                'report'           => ['view'],              // ✅ added
+                'patient-report'   => ['view'],              // ✅ added
+                'financial-report' => ['view'],              // ✅ added (daily cash)
+            ],
+
+            // ═══════════════════════════════════════════════════════════
+            // 🧑 PATIENT — Self-service portal
+            // ═══════════════════════════════════════════════════════════
+            'patient' => [
+
+                // ── Dashboard ─────────────────────────────────────────
+                'dashboard'        => ['view'],
+                'notification'     => ['viewAny', 'view', 'update'],
+
+                // ── Appointments ──────────────────────────────────────
+                'appointment'      => ['viewAny', 'view', 'create', 'cancel', 'reschedule'],
+
+                // ── Own Profile ───────────────────────────────────────
+                'patient'          => $basicCrud,
+                'medical-profile'  => ['view', 'update'],
+                'medical-item'     => ['view'],
+                'medical-alert'    => ['view'],
+
+                // ── Clinical (read-only) ──────────────────────────────
+                'dental-chart'     => ['view'],
+                'treatment'        => ['view'],
+                'treatment-plan'   => ['view', 'accept', 'reject'],
+                'prescription'     => ['view'],
+                'attachment'       => ['view', 'download'],
+                'consent-form'     => ['view', 'sign'],
+
+                // ── Doctors & Services (browsing) ─────────────────────
+                'doctor'           => $readOnly,
+                'doctor-schedule'  => $readOnly,
+                'service'          => $readOnly,
+                'gallery'          => $readOnly,
+                'faq'              => $readOnly,
+
+                // ── Financial (own records) ───────────────────────────
+                'invoice'          => ['viewAny', 'view'],
+                'payment'          => ['viewAny', 'view', 'create'],
+            ],
+
+        ];
+
+        // ═══════════════════════════════════════════════════════════════
+        // ASSIGN PERMISSIONS TO ROLES
+        // ═══════════════════════════════════════════════════════════════
+
+        foreach ($roles as $roleName => $resources) {
+
+            $role = Role::firstOrCreate([
+                'name'       => $roleName,
+                'guard_name' => 'api',
+            ]);
+
+            // Super admin gets everything
+            if ($resources === '*') {
+                $allPermissions = Permission::where('guard_name', 'api')->get();
+                $role->syncPermissions($allPermissions);
+                $this->command->info("✅ {$roleName}: " . $allPermissions->count() . " permissions (ALL)");
+                continue;
+            }
+
+            // Build flat permission list from resource => actions map
+            $permissions = [];
+            foreach ($resources as $resource => $actions) {
+                foreach ($actions as $action) {
+                    $permissions[] = "{$resource}.{$action}";
+                }
+            }
+
+            // Only assign permissions that actually exist in DB
+            $existingPermissions = Permission::where('guard_name', 'api')
+                ->whereIn('name', $permissions)
+                ->pluck('name')
+                ->toArray();
+
+            // Warn about any that were requested but don't exist
+            $missing = array_diff($permissions, $existingPermissions);
+            if (!empty($missing)) {
+                foreach ($missing as $m) {
+                    $this->command->warn("   ⚠️  [{$roleName}] missing permission: {$m}");
+                }
+            }
+
+            $role->syncPermissions($existingPermissions);
+            $this->command->info("✅ {$roleName}: " . count($existingPermissions) . " permissions assigned");
+        }
+
+        $this->command->newLine();
+        $this->command->info('🎉 All roles configured successfully!');
+    }
+}

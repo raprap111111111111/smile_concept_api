@@ -1,0 +1,12 @@
+<?php
+
+namespace App\Domain\Invoices\DTOs;
+
+final readonly class CreateInvoiceItemDTO
+{
+    public function __construct(
+        public int   $treatmentId,
+        public int   $quantity,
+        public float $discount = 0.00
+    ) {}
+}
