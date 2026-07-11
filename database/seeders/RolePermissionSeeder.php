@@ -50,8 +50,15 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Appointments ──────────────────────────────────────
                 'appointment'        => array_merge($basicCrud, [
-                    'approve', 'reject', 'cancel', 'reschedule',
-                    'check-in', 'check-out', 'no-show', 'complete', 'update-status',
+                    'approve',
+                    'reject',
+                    'cancel',
+                    'reschedule',
+                    'check-in',
+                    'check-out',
+                    'no-show',
+                    'complete',
+                    'update-status',
                 ]),
                 'recall'             => array_merge($basicCrud, ['send-reminder', 'mark-completed']),
 
@@ -73,22 +80,38 @@ class RolePermissionSeeder extends Seeder
                 // ── Lab Cases ─────────────────────────────────────────
                 'lab'                => $basicCrud,
                 'lab-case'           => array_merge($basicCrud, [
-                    'send', 'receive', 'quality-check', 'install', 'return',
+                    'send',
+                    'receive',
+                    'quality-check',
+                    'install',
+                    'return',
                 ]),
 
                 // ── Financial ─────────────────────────────────────────
                 'invoice'            => array_merge($basicCrud, [
-                    'send', 'mark-paid', 'void', 'print', 'export', 'refund',
+                    'send',
+                    'mark-paid',
+                    'void',
+                    'print',
+                    'export',
+                    'refund',
                 ]),
                 'payment'            => array_merge($basicCrud, [
-                    'refund', 'void', 'print-receipt', 'export',
+                    'refund',
+                    'void',
+                    'print-receipt',
+                    'export',
                 ]),
                 'discount'           => $basicCrud,
                 'tax'                => $basicCrud,
 
                 // ── Inventory ─────────────────────────────────────────
                 'inventory'          => array_merge($basicCrud, [
-                    'adjust', 'transfer', 'stock-in', 'stock-out', 'export',
+                    'adjust',
+                    'transfer',
+                    'stock-in',
+                    'stock-out',
+                    'export',
                 ]),
                 'inventory-category' => $basicCrud,
                 'supplier'           => $basicCrud,
@@ -98,7 +121,11 @@ class RolePermissionSeeder extends Seeder
                 'employee'           => array_merge($basicCrud, ['import', 'export']),
                 'attendance'         => array_merge($basicCrud, ['check-in', 'check-out']),
                 'leave-request'      => array_merge($basicCrud, [
-                    'prepare', 'note', 'approve', 'receive', 'reject',
+                    'prepare',
+                    'note',
+                    'approve',
+                    'receive',
+                    'reject',
                 ]),
                 'payroll'            => array_merge($basicCrud, ['generate', 'approve', 'pay', 'export']),
 
@@ -141,7 +168,12 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Appointments ──────────────────────────────────────
                 'appointment'      => array_merge($readOnly, [
-                    'update', 'check-in', 'check-out', 'complete', 'no-show', 'update-status',
+                    'update',
+                    'check-in',
+                    'check-out',
+                    'complete',
+                    'no-show',
+                    'update-status',
                 ]),
 
                 // ── Patients ──────────────────────────────────────────
@@ -161,7 +193,11 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Lab Cases ─────────────────────────────────────────
                 'lab-case'         => array_merge($readOnly, [
-                    'create', 'send', 'receive', 'quality-check', 'install',
+                    'create',
+                    'send',
+                    'receive',
+                    'quality-check',
+                    'install',
                 ]),
 
                 // ── Financial (read-only) ─────────────────────────────
@@ -194,8 +230,14 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Appointments ──────────────────────────────────────
                 'appointment'      => array_merge($basicCrud, [
-                    'approve', 'reject', 'cancel', 'reschedule',
-                    'check-in', 'check-out', 'no-show', 'update-status',
+                    'approve',
+                    'reject',
+                    'cancel',
+                    'reschedule',
+                    'check-in',
+                    'check-out',
+                    'no-show',
+                    'update-status',
                 ]),
                 'recall'           => array_merge($readWrite, ['send-reminder']),
 
@@ -248,41 +290,33 @@ class RolePermissionSeeder extends Seeder
             // ═══════════════════════════════════════════════════════════
             // 🧑 PATIENT — Self-service portal
             // ═══════════════════════════════════════════════════════════
+            // database/seeders/RolePermissionSeeder.php
             'patient' => [
-
-                // ── Dashboard ─────────────────────────────────────────
                 'dashboard'        => ['view'],
                 'notification'     => ['viewAny', 'view', 'update'],
 
-                // ── Appointments ──────────────────────────────────────
-                'appointment'      => ['viewAny', 'view', 'create', 'cancel', 'reschedule'],
+                // Own appointments only (no viewAny — that's for staff)
+                'appointment'      => ['view', 'create', 'cancel', 'reschedule'],
 
-                // ── Own Profile ───────────────────────────────────────
-                'patient'          => $basicCrud,
+                // Own profile only
+                'patient'          => ['view', 'update'],
                 'medical-profile'  => ['view', 'update'],
-                'medical-item'     => ['view'],
-                'medical-alert'    => ['view'],
 
-                // ── Clinical (read-only) ──────────────────────────────
+                // Own clinical records (read-only)
                 'dental-chart'     => ['view'],
                 'treatment'        => ['view'],
                 'treatment-plan'   => ['view', 'accept', 'reject'],
                 'prescription'     => ['view'],
-                'attachment'       => ['view', 'download'],
-                'consent-form'     => ['view', 'sign'],
 
-                // ── Doctors & Services (browsing) ─────────────────────
-                'doctor'           => $readOnly,
-                'doctor-schedule'  => $readOnly,
-                'service'          => $readOnly,
-                'gallery'          => $readOnly,
-                'faq'              => $readOnly,
+                // Browse info (single item, not lists)
+                'doctor'           => ['view'],
+                'service'          => ['view'],
+                'faq'              => ['view'],
 
-                // ── Financial (own records) ───────────────────────────
-                'invoice'          => ['viewAny', 'view'],
-                'payment'          => ['viewAny', 'view', 'create'],
+                // Own billing only
+                'invoice'          => ['view'],
+                'payment'          => ['view', 'create'],
             ],
-
         ];
 
         // ═══════════════════════════════════════════════════════════════
