@@ -37,11 +37,12 @@ Route::prefix('v1')->group(function () {
 
         Route::prefix('auth')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
-            Route::get('/users/me', [UserController::class, 'me']);
             Route::post('update-password', [AuthController::class, 'updatePassword']);
         });
 
         Route::get('profile', [AuthController::class, 'profile']);
+
+        Route::get('users/me', [UserController::class, 'me'])->name('users.me');
 
 
         /*

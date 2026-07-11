@@ -30,6 +30,7 @@ class UserMapper
             branchIds: $request->input('branch_ids'),
             password: $request->validated('password'),
             isActive: $request->validated('is_active'),
+            photo:     $request->file('photo'), // ✅ NEW
         );
     }
 }

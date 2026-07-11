@@ -1,4 +1,5 @@
 <?php
+// app/Domain/User/Actions/UpdateUserAction.php
 
 namespace App\Domain\User\Actions;
 
@@ -6,7 +7,10 @@ use App\Domain\User\DTOs\UpdateUserDTO;
 use App\Domain\User\Repositories\UserRepository;
 use App\Domain\User\Services\UserService;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class UpdateUserAction
 {
@@ -17,7 +21,6 @@ class UpdateUserAction
 
     public function execute(User $user, UpdateUserDTO $dto)
     {
-        // 1. Prepare basic user data
         $data = [
             'name'      => $dto->name,
             'email'     => $dto->email,
@@ -25,26 +28,46 @@ class UpdateUserAction
             'is_active' => $dto->isActive,
         ];
 
-        // 2. Hash password if provided
+        // Hash password if provided
         if ($dto->password) {
             $data['password'] = $this->userService->hashPassword($dto->password);
         }
 
-        // 3. Remove null values from data array
+        // ✅ Handle photo upload
+        if ($dto->photo instanceof UploadedFile) {
+            $data['profile_photo'] = $this->uploadPhoto($user, $dto->photo);
+        }
+
+        // Remove null values
         $data = array_filter($data, fn($value) => !is_null($value));
 
-        // 4. Use a transaction to ensure both user update and branch sync succeed
         return DB::transaction(function () use ($user, $data, $dto) {
-            // Update the user basic info
             $updatedUser = $this->repository->update($user, $data);
 
-            // Sync the many-to-many relationship if branchIds were provided
             if (isset($dto->branchIds)) {
                 $updatedUser->branches()->sync($dto->branchIds);
             }
 
-            // Return the user with the branches relationship loaded
-            return $updatedUser->load('branches');
+            return $updatedUser->load(['branches', 'patientProfile']);
         });
+    }
+
+    /**
+     * Upload photo to storage and delete old one
+     */
+    private function uploadPhoto(User $user, UploadedFile $photo): string
+    {
+        // Delete old photo if it's a stored file (not a default/URL)
+        if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+            Storage::disk('public')->delete($user->profile_photo);
+        }
+
+        // Generate unique filename
+        $filename = 'profile_' . $user->id . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
+
+        // Store in storage/app/public/profile_photos
+        $path = $photo->storeAs('profile_photos', $filename, 'public');
+
+        return $path;
     }
 }

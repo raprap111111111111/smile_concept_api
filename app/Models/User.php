@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{HasOne, HasMany, BelongsToMany, BelongsTo};
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use App\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
@@ -63,7 +64,7 @@ class User extends Authenticatable
     public function branches(): BelongsToMany
     {
         return $this->belongsToMany(Branch::class, 'branch_user')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -184,15 +185,37 @@ class User extends Authenticatable
     // ═══════════════════════════════════════════════════════
 
     /**
-     * Full URL for profile photo (with fallback)
+     * Full URL for profile photo — served via CORS-enabled route
+     */
+  // ═══════════════════════════════════════════════════════
+// ✅ ACCESSORS
+// ═══════════════════════════════════════════════════════
+
+    /**
+     * Full URL for profile photo (CORS-safe via custom route)
      */
     public function getProfilePhotoUrlAttribute(): string
     {
-        return $this->profile_photo
-            ? asset('storage/' . $this->profile_photo)
-            : asset('images/default-avatar.png');
+        if (!$this->profile_photo) {
+            return asset('images/default-avatar.png');
+        }
+
+        // profile_photo stored as: "profile_photos/xyz.jpg"
+        // We extract filename for the CORS route
+        $filename = basename($this->profile_photo);
+
+        return url('/profile-photo/' . $filename);
     }
 
+    /**
+     * Alternative: direct storage URL (no CORS, faster)
+     */
+    public function getProfilePhotoStorageUrlAttribute(): string
+    {
+        return $this->profile_photo
+            ? Storage::disk('public')->url($this->profile_photo)
+            : asset('images/default-avatar.png');
+    }
     /**
      * Get user's initials (for avatar placeholder)
      */
@@ -200,14 +223,14 @@ class User extends Authenticatable
     {
         $parts = explode(' ', trim($this->name));
         $initials = '';
-        
+
         foreach ($parts as $part) {
             if (!empty($part)) {
                 $initials .= strtoupper($part[0]);
                 if (strlen($initials) >= 2) break;
             }
         }
-        
+
         return $initials ?: '?';
     }
 
@@ -247,11 +270,11 @@ class User extends Authenticatable
     public function scopeSearch($query, ?string $search)
     {
         if (empty($search)) return $query;
-        
+
         return $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%")
-              ->orWhere('phone', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('phone', 'like', "%{$search}%");
         });
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Domain\User\DTOs;
 
+use Illuminate\Http\UploadedFile;
+
 final readonly class UpdateUserDTO
 {
     public function __construct(
@@ -11,5 +13,6 @@ final readonly class UpdateUserDTO
         public ?array $branchIds = null,
         public ?string $password = null,
         public ?bool $isActive = null,
+        public readonly ?UploadedFile $photo = null, // ✅ NEW
     ) {}
 }
