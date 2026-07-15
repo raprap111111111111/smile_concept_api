@@ -76,11 +76,15 @@ class PermissionSeeder extends Seeder
             'dental-chart'     => $crud,
             'clinical-note'    => array_merge($crud, ['finalize', 'amend']),
             'treatment'        => $crud,
-            'treatment-plan'   => array_merge($crud, [
+            // ─────────────────────────────────────────
+
+            'treatment-plan' => array_merge($crud, [
                 'send-to-patient',
                 'accept',
                 'reject',
                 'mark-completed',
+                'reopen',
+                'change-status',
             ]),
             'prescription'     => array_merge($crud, ['print', 'send']),
             'attachment'       => array_merge($crud, ['download', 'upload']),

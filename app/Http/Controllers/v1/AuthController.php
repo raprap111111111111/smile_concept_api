@@ -46,12 +46,6 @@ class AuthController extends Controller
             return $this->successResponse([
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                ]
             ], 'Registration completed successfully.', JsonResponse::HTTP_CREATED);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);

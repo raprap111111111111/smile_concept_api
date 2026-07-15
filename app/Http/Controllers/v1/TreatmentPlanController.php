@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\v1;
 
+use App\Domain\TreatmentPlans\Actions\ChangeTreatmentPlanStatusAction;
 use App\Domain\TreatmentPlans\Actions\CreateTreatmentPlanAction;
 use App\Domain\TreatmentPlans\Actions\DeleteTreatmentPlanAction;
 use App\Domain\TreatmentPlans\Actions\UpdateTreatmentPlanAction;
+use App\Domain\TreatmentPlans\Exceptions\InvalidStatusTransitionException;
 use App\Domain\TreatmentPlans\Mappers\TreatmentPlanMapper;
 use App\Domain\TreatmentPlans\Repositories\TreatmentPlanRepository;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\v1\TreatmentPlan\ChangeTreatmentPlanStatusRequest;
 use App\Http\Requests\v1\TreatmentPlan\DeleteTreatmentPlanRequest;
 use App\Http\Requests\v1\TreatmentPlan\GetAllTreatmentPlansRequest;
 use App\Http\Requests\v1\TreatmentPlan\GetTreatmentPlanRequest;
@@ -23,7 +26,8 @@ class TreatmentPlanController extends Controller
         private readonly TreatmentPlanRepository $repository,
         private readonly CreateTreatmentPlanAction $createAction,
         private readonly UpdateTreatmentPlanAction $updateAction,
-        private readonly DeleteTreatmentPlanAction $deleteAction
+        private readonly DeleteTreatmentPlanAction $deleteAction,
+        private readonly ChangeTreatmentPlanStatusAction $changeStatusAction,
     ) {}
 
     public function index(GetAllTreatmentPlansRequest $request): JsonResponse
@@ -78,5 +82,26 @@ class TreatmentPlanController extends Controller
     {
         $this->deleteAction->execute($treatmentPlan);
         return $this->successResponse(null, 'Treatment plan catalog estimate deleted.');
+    }
+
+    public function changeStatus(
+        ChangeTreatmentPlanStatusRequest $request,  
+        TreatmentPlan $treatmentPlan
+    ): JsonResponse {
+        try {
+            $updated = $this->changeStatusAction->execute(
+                $treatmentPlan,
+                TreatmentPlanMapper::fromStatusChangeRequest($request)
+            );
+
+            return $this->successResponse(
+                new TreatmentPlanResource($updated),
+                "Plan status changed to {$updated->status->label()}."
+            );
+        } catch (InvalidStatusTransitionException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
     }
 }
