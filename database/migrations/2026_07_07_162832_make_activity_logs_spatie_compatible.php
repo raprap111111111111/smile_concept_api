@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -35,10 +35,14 @@ return new class extends Migration
             }
         });
 
-        // Make old custom required columns nullable because Spatie will not insert action/user_agent/ip/url by default.
-        DB::statement('ALTER TABLE activity_logs MODIFY action VARCHAR(255) NULL');
-        DB::statement('ALTER TABLE activity_logs MODIFY subject_type VARCHAR(255) NULL');
-        DB::statement('ALTER TABLE activity_logs MODIFY subject_id BIGINT UNSIGNED NULL');
+        // Make old custom required columns nullable because Spatie will not insert these by default.
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('activity_logs', function (Blueprint $table) {
+                $table->string('action')->nullable()->change();
+                $table->string('subject_type')->nullable()->change();
+                $table->unsignedBigInteger('subject_id')->nullable()->change();
+            });
+        }
 
         Schema::table('activity_logs', function (Blueprint $table) {
             $table->index(['causer_type', 'causer_id'], 'activity_logs_causer_index');
