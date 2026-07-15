@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Domain\Auth\Repositories\UserRepository;
 use App\Domain\Auth\Repositories\UserRepositoryInterface;
-use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;

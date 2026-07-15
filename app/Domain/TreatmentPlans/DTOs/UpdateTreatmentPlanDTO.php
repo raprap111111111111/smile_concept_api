@@ -2,6 +2,8 @@
 
 namespace App\Domain\TreatmentPlans\DTOs;
 
+
+
 final readonly class UpdateTreatmentPlanDTO
 {
     /**
@@ -11,7 +13,6 @@ final readonly class UpdateTreatmentPlanDTO
         public ?int $userId = null,
         public ?int $doctorId = null,
         public ?string $name = null,
-        public ?string $status = null,
         public ?string $notes = null,
         public ?array $items = null
     ) {}
