@@ -18,6 +18,7 @@ use App\Http\Resources\v1\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -42,10 +43,15 @@ class AuthController extends Controller
             // Generate Access Token instantly for autologin
             $tokenResult = $user->createToken('Personal Access Token');
             $token = $tokenResult->accessToken;
+            $refreshToken = bin2hex(random_bytes(40));
+
+            $user->load(['roles.permissions', 'permissions', 'patientProfile', 'branches']);
 
             return $this->successResponse([
                 'access_token' => $token,
+                'refresh_token' => $refreshToken,
                 'token_type' => 'Bearer',
+                'user' => new UserResource($user),
             ], 'Registration completed successfully.', JsonResponse::HTTP_CREATED);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
@@ -61,10 +67,16 @@ class AuthController extends Controller
             LoginMapper::fromRequest($request)
         );
 
+        RateLimiter::clear($request->throttleKey());
+
+        $user = $result['user'];
+        $user->load(['roles.permissions', 'permissions', 'patientProfile', 'branches']);
+
         return $this->responseSuccess(
             [
                 'access_token'  => $result['token'],
                 'refresh_token' => $result['refresh_token'],
+                'user'          => new UserResource($user),
             ],
             'Logged in successfully.'
         )->cookie(...$this->getCookieData($result['refresh_token']));

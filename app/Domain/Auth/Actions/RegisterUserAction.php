@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\PatientProfile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class RegisterUserAction
 {
@@ -30,7 +31,8 @@ class RegisterUserAction
             ]);
 
             if (method_exists($user, 'assignRole')) {
-                $user->assignRole('patient');
+                $patientRole = Role::findOrCreate('patient', 'api');
+                $user->assignRole($patientRole);
             } else {
                 $role = DB::table('roles')->where('name', 'patient')->first();
                 if ($role) {
