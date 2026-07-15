@@ -6,11 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
+        if (Schema::hasTable('oauth_auth_codes')) {
+            return;
+        }
+
         Schema::create('oauth_auth_codes', function (Blueprint $table) {
             $table->char('id', 80)->primary();
             $table->foreignId('user_id')->index();
@@ -21,17 +22,11 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('oauth_auth_codes');
     }
 
-    /**
-     * Get the migration connection name.
-     */
     public function getConnection(): ?string
     {
         return $this->connection ?? config('passport.connection');
