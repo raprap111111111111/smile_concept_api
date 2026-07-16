@@ -62,6 +62,7 @@ class AppointmentMapper
             doctorId: isset($validated['doctor_id']) ? (int) $validated['doctor_id'] : null,
             branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
             userId: isset($validated['user_id']) ? (int) $validated['user_id'] : null,
+            scope: $validated['scope'] ?? CalendarCountsAppointmentDTO::SCOPE_OWN,
         );
     }
 }
