@@ -27,6 +27,10 @@ class AppointmentMapper
             createdBy: isset($validated['created_by']) ? (int) $validated['created_by'] : auth()->id(),
             reasonForVisit: $validated['reason_for_visit'] ?? null,  // ✅ ADD
             reminderSent: $validated['reminder_sent'] ?? false,
+            patientName: $validated['patient_name'] ?? null,
+            patientPhone: $validated['patient_phone'] ?? null,
+            patientEmail: $validated['patient_email'] ?? null,
+            additionalNotes: $validated['additional_notes'] ?? null,
         );
     }
 

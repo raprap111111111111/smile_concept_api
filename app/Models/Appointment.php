@@ -30,10 +30,14 @@ class Appointment extends Model
         'user_id',
         'doctor_id',
         'branch_id',
+        'patient_name',
+        'patient_phone',
+        'patient_email',
         'start_time',
         'end_time',
         'status',
         'reason_for_visit',     // ✅ ADD
+        'additional_notes',
         'cancellation_reason',  // ✅ ADD
         'created_by',           // ✅ ADD
         'reminder_sent',
