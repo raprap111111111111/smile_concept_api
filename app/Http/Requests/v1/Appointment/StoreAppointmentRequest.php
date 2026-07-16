@@ -113,6 +113,40 @@ class StoreAppointmentRequest extends FormRequest
                 'max:1000',
             ],
 
+            /*
+            |------------------------------------------------------------------
+            | Patient contact details
+            |------------------------------------------------------------------
+            |
+            | Captured when booking on someone else's behalf (spouse, child).
+            | The appointment still belongs to user_id; these describe who is
+            | actually attending.
+            |
+            */
+            'patient_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'patient_phone' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'patient_email' => [
+                'nullable',
+                'email',
+                'max:255',
+            ],
+
+            'additional_notes' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+
             'created_by' => [
                 'required',
                 'integer',

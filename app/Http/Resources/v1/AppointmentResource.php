@@ -19,6 +19,12 @@ class AppointmentResource extends JsonResource
             'status'     => $this->status,
             'reminder_sent' => (bool) $this->reminder_sent,
 
+            'patient_name'     => $this->patient_name,
+            'patient_phone'    => $this->patient_phone,
+            'patient_email'    => $this->patient_email,
+            'reason_for_visit' => $this->reason_for_visit,
+            'additional_notes' => $this->additional_notes,
+
             'user' => [
                 'id'    => $this->user?->id,
                 'name'  => $this->user?->name,

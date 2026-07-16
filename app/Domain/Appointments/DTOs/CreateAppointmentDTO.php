@@ -14,8 +14,12 @@ final readonly class CreateAppointmentDTO
         public string $endTime,
         public AppointmentStatus $status,
         public ?int $userId = null,
-        public ?int $createdBy = null,          
-        public ?string $reasonForVisit = null, 
+        public ?int $createdBy = null,
+        public ?string $reasonForVisit = null,
         public ?bool $reminderSent = null,
+        public ?string $patientName = null,
+        public ?string $patientPhone = null,
+        public ?string $patientEmail = null,
+        public ?string $additionalNotes = null,
     ) {}
 }

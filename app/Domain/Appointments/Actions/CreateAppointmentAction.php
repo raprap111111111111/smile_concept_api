@@ -91,6 +91,10 @@ class CreateAppointmentAction
                 'end_time'         => $dto->endTime,
                 'status'           => $dto->status->value,
                 'reason_for_visit' => $dto->reasonForVisit,
+                'additional_notes' => $dto->additionalNotes,
+                'patient_name'     => $dto->patientName,
+                'patient_phone'    => $dto->patientPhone,
+                'patient_email'    => $dto->patientEmail,
                 'created_by'       => $dto->createdBy ?? $authUser->id,
                 'reminder_sent'    => $dto->reminderSent ?? false,
             ]);

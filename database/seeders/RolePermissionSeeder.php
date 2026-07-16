@@ -308,8 +308,12 @@ class RolePermissionSeeder extends Seeder
                 'treatment-plan'   => ['view', 'accept', 'reject'],
                 'prescription'     => ['view'],
 
+                // Browse clinic directory — needed to choose a dentist and
+                // branch when booking. Not patient data, so listing is safe.
+                'doctor'           => ['viewAny', 'view'],
+                'branch'           => ['viewAny', 'view'],
+
                 // Browse info (single item, not lists)
-                'doctor'           => ['view'],
                 'service'          => ['view'],
                 'faq'              => ['view'],
 
