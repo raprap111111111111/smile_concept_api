@@ -2,6 +2,7 @@
 
 namespace App\Domain\Appointments\Repositories;
 
+use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Support\Query\BaseRepository;
 use App\Models\DoctorSchedule;
@@ -318,19 +319,27 @@ class AppointmentRepository extends BaseRepository
         bool $canViewAny = false,   // ✅ NEW
         ?int $authUserId = null      // ✅ NEW
     ): array {
-        $startOfMonth = Carbon::createFromFormat('Y-m', $dto->month)
-            ->startOfMonth()
+        // Anchor to day 01: 'Y-m' alone inherits today's day and overflows short months.
+        $startOfMonth = Carbon::createFromFormat('Y-m-d', $dto->month.'-01')
             ->startOfDay();
 
-        $endOfMonth = Carbon::createFromFormat('Y-m', $dto->month)
+        $endOfMonth = $startOfMonth->copy()
             ->endOfMonth()
             ->endOfDay();
+
+        // Clinic scope means day load for every caller, not just patients:
+        // the booking calendar must show the same busy dots to whoever opens
+        // it. Staff keep their full breakdown via the default 'own' scope.
+        $isDayLoad = $dto->scope === CalendarCountsAppointmentDTO::SCOPE_CLINIC;
 
         $query = $this->model::query()
             ->whereBetween('start_time', [$startOfMonth, $endOfMonth]);
 
         // 🔐 CORE PERMISSION LOGIC (same as paginate)
-        if (!$canViewAny) {
+        if ($isDayLoad) {
+            // Cancelled appointments free the slot, so they don't make a day busy.
+            $query->where('status', '!=', AppointmentStatus::CANCELLED->value);
+        } elseif (!$canViewAny) {
             // Patient → force filter to their own appointments
             $query->where('user_id', $authUserId);
         } elseif ($dto->userId !== null) {
@@ -338,7 +347,9 @@ class AppointmentRepository extends BaseRepository
             $query->where('user_id', $dto->userId);
         }
 
-        if ($dto->status !== null) {
+        // status and user_id are ignored for day load: narrowing clinic-wide
+        // counts by either would let a patient probe other people's bookings.
+        if ($dto->status !== null && !$isDayLoad) {
             $query->where('status', $dto->status);
         }
 
@@ -380,6 +391,14 @@ class AppointmentRepository extends BaseRepository
             }
 
             $result[$date]['total'] += $count;
+        }
+
+        // Strip the per-status breakdown so day load discloses volume only.
+        if ($isDayLoad) {
+            return array_map(
+                static fn (array $counts): array => ['total' => $counts['total']],
+                $result,
+            );
         }
 
         return $result;

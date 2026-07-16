@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\v1\Appointment;
 
+use App\Domain\Appointments\DTOs\CalendarCountsAppointmentDTO;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +32,10 @@ class CalendarCountsAppointmentRequest extends FormRequest
             'doctor_id' => ['nullable', 'integer', 'exists:doctors,id'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'user_id'   => ['nullable', 'integer', 'exists:users,id'],
+            'scope'     => ['nullable', Rule::in([
+                CalendarCountsAppointmentDTO::SCOPE_OWN,
+                CalendarCountsAppointmentDTO::SCOPE_CLINIC,
+            ])],
         ];
     }
 }
