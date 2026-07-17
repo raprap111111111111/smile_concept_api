@@ -83,6 +83,7 @@ Route::prefix('v1')->group(function () {
         require __DIR__ . '/api/activityLog.php';
         require __DIR__ . '/api/notification.php';
         require __DIR__ . '/api/notificationTemplate.php';
+        require __DIR__ . '/api/cliinicalRecord.php';
     });
 });
 
