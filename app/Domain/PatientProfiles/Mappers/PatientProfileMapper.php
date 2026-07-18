@@ -44,6 +44,10 @@ class PatientProfileMapper
             hasCardiacConditions: $request->has('has_cardiac_conditions') ? (bool) $request->validated('has_cardiac_conditions') : null,
             isPregnant: $request->has('is_pregnant') ? (bool) $request->validated('is_pregnant') : null,
             hasBleedingDisorders: $request->has('has_bleeding_disorders') ? (bool) $request->validated('has_bleeding_disorders') : null,
+
+            // The rules are all 'sometimes', so validated() holds exactly the
+            // keys the client sent.
+            providedKeys: array_keys($request->validated()),
         );
     }
 }

@@ -27,8 +27,10 @@ class UpdatePatientProfileAction
             }
         }
 
+        // Keyed off what the client actually sent, not off null: a nullable
+        // field such as the emergency contact has to be clearable, and
+        // filtering nulls away would make that impossible.
         $data = array_filter([
-            'user_id'                              => $dto->userId,
             'allergies'                            => $dto->allergies,
             'medical_history'                      => $dto->medicalHistory,
             'blood_type'                           => $dto->bloodType,
@@ -38,8 +40,15 @@ class UpdatePatientProfileAction
             'has_cardiac_conditions'               => $dto->hasCardiacConditions,
             'is_pregnant'                          => $dto->isPregnant,
             'has_bleeding_disorders'               => $dto->hasBleedingDisorders,
-        ], fn($value) => !is_null($value));
-        
+        ], fn($key) => in_array($key, $dto->providedKeys, true), ARRAY_FILTER_USE_KEY);
+
+        // Reassigning the owner is not something a client clears, so it keeps
+        // the null guard.
+        if ($dto->userId !== null) {
+            $data['user_id'] = $dto->userId;
+        }
+
+
         return $this->repository->update($profile, $data);
     }
 }

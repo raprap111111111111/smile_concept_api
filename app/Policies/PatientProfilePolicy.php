@@ -24,7 +24,17 @@ class PatientProfilePolicy
 
     public function update(User $user, PatientProfile $profile): bool
     {
-        return $user->can('patient.update');
+        if (! $user->can('patient.update')) {
+            return false;
+        }
+
+        // The patient role holds patient.update so it can maintain its own
+        // record from the profile page — it must not reach anyone else's.
+        if ($user->isPatient()) {
+            return $profile->user_id === $user->id;
+        }
+
+        return true;
     }
 
     public function delete(User $user, PatientProfile $profile): bool

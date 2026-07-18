@@ -13,7 +13,9 @@ class RegisterMapper
             name: $request->validated('name'),
             email: $request->validated('email'),
             password: $request->validated('password'),
-            phone: $request->validated('phone')
+            phone: $request->validated('phone'),
+            emergencyContactName: $request->validated('emergency_contact_name'),
+            emergencyContactPhone: $request->validated('emergency_contact_phone')
         );
     }
 }

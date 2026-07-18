@@ -15,5 +15,14 @@ final readonly class UpdatePatientProfileDTO
         public ?bool   $hasCardiacConditions = null,
         public ?bool   $isPregnant = null,
         public ?bool   $hasBleedingDisorders = null,
+
+        /**
+         * Request keys the client actually sent, so a nullable field can be
+         * cleared. Without this, null is ambiguous between "omitted" and
+         * "set me back to empty".
+         *
+         * @var list<string>
+         */
+        public array $providedKeys = [],
     ) {}
 }
