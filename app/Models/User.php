@@ -194,10 +194,12 @@ class User extends Authenticatable
     /**
      * Full URL for profile photo (CORS-safe via custom route)
      */
-    public function getProfilePhotoUrlAttribute(): string
+    public function getProfilePhotoUrlAttribute(): ?string
     {
+        // Null (not a placeholder URL) so clients fall back to initials
+        // instead of requesting an image that does not exist.
         if (!$this->profile_photo) {
-            return asset('images/default-avatar.png');
+            return null;
         }
 
         // profile_photo stored as: "profile_photos/xyz.jpg"
@@ -210,11 +212,11 @@ class User extends Authenticatable
     /**
      * Alternative: direct storage URL (no CORS, faster)
      */
-    public function getProfilePhotoStorageUrlAttribute(): string
+    public function getProfilePhotoStorageUrlAttribute(): ?string
     {
         return $this->profile_photo
             ? Storage::disk('public')->url($this->profile_photo)
-            : asset('images/default-avatar.png');
+            : null;
     }
     /**
      * Get user's initials (for avatar placeholder)
