@@ -62,8 +62,13 @@ class UpdateUserAction
             Storage::disk('public')->delete($user->profile_photo);
         }
 
+        // Web uploads arrive as raw bytes and may carry no client extension,
+        // so fall back to the extension guessed from the file's own mime type.
+        $extension = $photo->getClientOriginalExtension()
+            ?: ($photo->guessExtension() ?: 'jpg');
+
         // Generate unique filename
-        $filename = 'profile_' . $user->id . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
+        $filename = 'profile_' . $user->id . '_' . Str::random(10) . '.' . $extension;
 
         // Store in storage/app/public/profile_photos
         $path = $photo->storeAs('profile_photos', $filename, 'public');

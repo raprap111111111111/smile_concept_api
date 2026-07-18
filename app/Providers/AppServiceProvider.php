@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Domain\Auth\Repositories\UserRepository;
 use App\Domain\Auth\Repositories\UserRepositoryInterface;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
@@ -17,6 +18,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // `artisan serve` blanks every environment variable that is not on its
+        // passthrough allowlist. On Windows that includes TMP/TEMP, which PHP
+        // needs to create the temporary file for an uploaded file — without
+        // them every multipart upload dies at request startup with
+        // "File upload error - unable to create a temporary file".
+        if (PHP_OS_FAMILY === 'Windows') {
+            ServeCommand::$passthroughVariables[] = 'TMP';
+            ServeCommand::$passthroughVariables[] = 'TEMP';
+        }
+
         // Super-admin bypass
         Gate::before(function ($user, $ability) {
             return $user->hasRole('super-admin') ? true : null;

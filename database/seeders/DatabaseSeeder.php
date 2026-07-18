@@ -26,10 +26,8 @@ class DatabaseSeeder extends Seeder
             ConsentTemplateSeeder::class, 
             SettingSeeder::class,
             NotificationTemplateSeeder::class,
-
-
-
- 
+            ServiceSeeder::class,
+            GallerySeeder::class,
         ]);
     }
 }
