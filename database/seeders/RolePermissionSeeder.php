@@ -292,7 +292,9 @@ class RolePermissionSeeder extends Seeder
             // ═══════════════════════════════════════════════════════════
             // database/seeders/RolePermissionSeeder.php
             'patient' => [
-                'dashboard'        => ['view'],
+                // No dashboard: it is the staff overview. Patients land on
+                // their appointments instead. Re-adding it here would put it
+                // back on every reseed, since roles are synced, not merged.
                 'notification'     => ['viewAny', 'view', 'update'],
 
                 // Own appointments only (no viewAny — that's for staff)
