@@ -24,9 +24,12 @@ class AppointmentRescheduledNotification extends Notification implements ShouldQ
 
     public function toDatabase(object $notifiable): array
     {
+        $when = Carbon::parse($this->appointment->start_time)
+            ->format('l, F j, Y \a\t g:i A');
+
         return [
             'title'          => 'Appointment Rescheduled',
-            'message'        => "Your appointment has been rescheduled to {$this->appointment->start_time}.",
+            'message'        => "The appointment has been moved to {$when}.",
             'appointment_id' => $this->appointment->id,
             'start_time'     => $this->appointment->start_time,
             'action_url'     => "/appointments/{$this->appointment->id}",

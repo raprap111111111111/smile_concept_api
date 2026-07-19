@@ -33,6 +33,20 @@ class AppointmentReminderRepository extends BaseRepository
     protected string $defaultOrderDirection = 'asc';
 
     /**
+     * Cancel (delete) all pending reminders for an appointment.
+     * Used when an appointment is cancelled or rescheduled.
+     *
+     * @return int Number of reminders removed
+     */
+    public function cancelPendingForAppointment(int $appointmentId): int
+    {
+        return AppointmentReminder::query()
+            ->where('appointment_id', $appointmentId)
+            ->where('status', 'pending')
+            ->delete();
+    }
+
+    /**
      * Get all reminders due for dispatch right now.
      */
     public function getDueReminders(int $limit = 100): Collection

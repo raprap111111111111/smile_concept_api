@@ -39,4 +39,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn(Request $request) => $request->is('api/*'),
         );
+
+        // Business-rule violations (e.g. invalid status transition)
+        // are client errors, not server errors
+        $exceptions->render(function (\DomainException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return null;
+        });
     })->create();
