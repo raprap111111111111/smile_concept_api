@@ -3,6 +3,7 @@
 namespace App\Domain\Appointments\Actions;
 
 use App\Domain\ActivityLogs\Services\ActivityLogger;
+use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\User;
@@ -15,7 +16,8 @@ use Illuminate\Support\Facades\Notification;
 class UpdateAppointmentStatusAction
 {
     public function __construct(
-        private readonly ActivityLogger $logger,
+        private readonly ActivityLogger                $logger,
+        private readonly AppointmentReminderRepository $reminderRepository,
     ) {}
 
     /**
@@ -56,6 +58,12 @@ class UpdateAppointmentStatusAction
 
         // ─── 5. Persist ──────────────────────────────────────
         $appointment->update($updateData);
+
+        // ─── 5b. Cancel pending reminders on cancellation ────
+        // Prevents reminder alerts firing for a cancelled appointment
+        if ($newStatus === AppointmentStatus::CANCELLED) {
+            $this->reminderRepository->cancelPendingForAppointment($appointment->id);
+        }
 
         // ─── 6. Audit log ─────────────────────────────────────
         $this->logger->log($appointment, 'status_changed', [
@@ -102,6 +110,7 @@ class UpdateAppointmentStatusAction
 
     /**
      * Fetch admin users using explicit whereHas query.
+     * Same admin audience as CreateAppointmentAction.
      * Avoids Intelephense "Undefined method 'role'" for Spatie's dynamic scope.
      *
      * @return Collection<int, User>
@@ -109,7 +118,11 @@ class UpdateAppointmentStatusAction
     private function getAdmins(): Collection
     {
         return User::query()
-            ->whereHas('roles', fn($q) => $q->where('name', 'admin'))
+            ->whereHas('roles', fn($q) => $q->whereIn('name', [
+                'admin',
+                'super-admin',
+                'owner',
+            ]))
             ->get();
     }
 
@@ -130,7 +143,8 @@ class UpdateAppointmentStatusAction
         }
 
         // Notify admins only if cancellation was by a non-admin (patient)
-        $cancelledByAdmin = auth()->user()?->hasRole('admin') ?? false;
+        $cancelledByAdmin = auth()->user()
+            ?->hasAnyRole(['admin', 'super-admin', 'owner']) ?? false;
 
         if (!$cancelledByAdmin && $admins->isNotEmpty()) {
             Notification::send($admins, $notification);

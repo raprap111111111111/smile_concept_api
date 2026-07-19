@@ -14,9 +14,18 @@ class UpdateAppointmentStatusRequest extends FormRequest
         $appointment = $this->route('appointment');
         $user = $this->user();
 
-        return $user->can('update-status', $appointment) ||
-               $user->isAdmin() ||
-               $user->isAssistant();
+        if (
+            $user->can('update-status', $appointment) ||
+            $user->isAdmin() ||
+            $user->isAssistant()
+        ) {
+            return true;
+        }
+
+        // Patients may ONLY cancel — ownership + active status
+        // are enforced by AppointmentPolicy::cancel()
+        return $this->input('status') === 'cancelled'
+            && $user->can('cancel', $appointment);
     }
 
     public function rules(): array

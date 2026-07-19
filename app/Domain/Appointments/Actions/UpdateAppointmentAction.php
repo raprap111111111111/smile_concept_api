@@ -3,22 +3,30 @@
 namespace App\Domain\Appointments\Actions;
 
 use App\Domain\ActivityLogs\Services\ActivityLogger;
+use App\Domain\AppointmentReminders\Actions\ScheduleReminderAction;
+use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
 use App\Domain\Appointments\DTOs\UpdateAppointmentDTO;
 use App\Domain\Appointments\Repositories\AppointmentRepository;
 use App\Domain\Appointments\Services\AppointmentService;
 use App\Models\Appointment;
+use App\Models\User;
 use App\Notifications\AppointmentRescheduledNotification;
+use Carbon\Carbon;
 use DomainException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class UpdateAppointmentAction
 {
     public function __construct(
-        private readonly AppointmentRepository        $repository,
-        private readonly AppointmentService           $appointmentService,
-        private readonly ActivityLogger               $logger,
+        private readonly AppointmentRepository         $repository,
+        private readonly AppointmentService            $appointmentService,
+        private readonly ActivityLogger                $logger,
         private readonly UpdateAppointmentStatusAction $statusAction, // ✅ delegate status changes
+        private readonly AppointmentReminderRepository $reminderRepository,
+        private readonly ScheduleReminderAction        $scheduleReminder,
     ) {}
 
     public function execute(Appointment $appointment, UpdateAppointmentDTO $dto): Appointment
@@ -37,8 +45,10 @@ class UpdateAppointmentAction
             }
 
             // ─── 2. Check time conflict if time changed ───────
-            $timeChanged = ($dto->startTime && $dto->startTime !== $appointment->start_time)
-                        || ($dto->endTime   && $dto->endTime   !== $appointment->end_time);
+            // ✅ Carbon-aware comparison — start_time/end_time are datetime
+            //    casts, so string !== Carbon would always report a change
+            $timeChanged = ($dto->startTime && !Carbon::parse($dto->startTime)->equalTo($appointment->start_time))
+                        || ($dto->endTime   && !Carbon::parse($dto->endTime)->equalTo($appointment->end_time));
 
             if ($timeChanged) {
                 $startTime = $dto->startTime ?? $appointment->start_time;
@@ -49,7 +59,7 @@ class UpdateAppointmentAction
                     $doctorId,
                     $startTime,
                     $endTime,
-                    excludeAppointmentId: $appointment->id   // ✅ exclude self
+                    excludeId: $appointment->id   // ✅ exclude self
                 )) {
                     throw ValidationException::withMessages([
                         'start_time' => ['This time slot is already booked for this doctor.'],
@@ -84,14 +94,55 @@ class UpdateAppointmentAction
                 'changes' => $data,
             ]);
 
-            // ─── 6. Notify patient if time was rescheduled ───
-            if ($timeChanged && $updated->user) {
-                $updated->user->notify(
-                    new AppointmentRescheduledNotification($updated)
-                );
+            // ─── 6. Reschedule reminders + send alerts ───────
+            if ($timeChanged) {
+                // Old reminders point at the previous time — rebuild them
+                $this->reminderRepository->cancelPendingForAppointment($updated->id);
+                $this->scheduleReminder->execute($updated);
+
+                $this->sendRescheduleAlerts($updated);
             }
 
             return $updated->load(['user', 'doctor.user', 'branch']);
         });
+    }
+
+    /**
+     * Alert patient + admins about the reschedule.
+     * Admins are alerted only when the change was made by a non-admin,
+     * mirroring the cancellation flow.
+     */
+    private function sendRescheduleAlerts(Appointment $appointment): void
+    {
+        $notification = new AppointmentRescheduledNotification($appointment);
+
+        $appointment->user?->notify($notification);
+
+        $rescheduledByAdmin = auth()->user()
+            ?->hasAnyRole(['admin', 'super-admin', 'owner']) ?? false;
+
+        if (!$rescheduledByAdmin) {
+            $admins = $this->getAdmins();
+
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, $notification);
+            }
+        }
+    }
+
+    /**
+     * Same admin audience as CreateAppointmentAction.
+     *
+     * @return Collection<int, User>
+     */
+    private function getAdmins(): Collection
+    {
+        return User::query()
+            ->whereHas('roles', fn($q) => $q->whereIn('name', [
+                'admin',
+                'super-admin',
+                'owner',
+            ]))
+            ->get();
     }
 }

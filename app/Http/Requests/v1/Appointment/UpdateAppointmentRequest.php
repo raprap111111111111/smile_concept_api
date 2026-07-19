@@ -12,11 +12,28 @@ class UpdateAppointmentRequest extends FormRequest
     public function authorize(): bool
     {
         $appointment = $this->route('appointment');
-        return $appointment && $this->user()->can('update', $appointment);
+
+        if (!$appointment) {
+            return false;
+        }
+
+        // Full update (staff) OR reschedule (patient — own active appointment)
+        return $this->user()->can('update', $appointment)
+            || $this->user()->can('reschedule', $appointment);
     }
 
     public function rules(): array
     {
+        // Reschedule-only users (patients) may change time + reason only.
+        // Other submitted fields are stripped because validated() ignores them.
+        if (!$this->user()->can('appointment.update')) {
+            return [
+                'start_time'       => ['required', 'date_format:Y-m-d H:i:s', 'after:now'],
+                'end_time'         => ['required', 'date_format:Y-m-d H:i:s', 'after:start_time'],
+                'reason_for_visit' => ['nullable', 'string', 'max:1000'],
+            ];
+        }
+
         return [
             'user_id'             => ['sometimes', 'required', 'integer', 'exists:users,id'],
             'doctor_id'           => ['sometimes', 'required', 'integer', 'exists:doctors,id'],

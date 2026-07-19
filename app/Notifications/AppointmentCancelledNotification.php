@@ -24,9 +24,18 @@ class AppointmentCancelledNotification extends Notification implements ShouldQue
 
     public function toDatabase(object $notifiable): array
     {
+        $when = \Carbon\Carbon::parse($this->appointment->start_time)
+            ->format('l, F j, Y \a\t g:i A');
+
+        $message = "The appointment on {$when} has been cancelled.";
+
+        if ($this->reason) {
+            $message .= " Reason: {$this->reason}";
+        }
+
         return [
             'title'          => 'Appointment Cancelled',
-            'message'        => "Your appointment on {$this->appointment->start_time} has been cancelled.",
+            'message'        => $message,
             'reason'         => $this->reason,
             'appointment_id' => $this->appointment->id,
             'action_url'     => "/appointments/{$this->appointment->id}",
