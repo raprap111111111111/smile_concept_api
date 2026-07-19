@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'dental_ai' => [
+        'key'   => env('DENTAL_AI_KEY'),
+        'url'   => env('DENTAL_AI_URL', 'http://host.docker.internal:9001'),
+        'model' => env('DENTAL_AI_MODEL', 'dentalxray-s3wqb/2'),
+    ],
+
 ];

@@ -9,27 +9,42 @@ use App\Http\Requests\v1\PatientAttachment\UpdatePatientAttachmentRequest;
 
 class PatientAttachmentMapper
 {
-    public static function fromCreateRequest(StorePatientAttachmentRequest $request): CreatePatientAttachmentDTO
-    {
+
+    public static function fromCreateRequest(
+        StorePatientAttachmentRequest $request,
+        string $filePath, // ✅ receive stored path
+    ): CreatePatientAttachmentDTO {
         return new CreatePatientAttachmentDTO(
             userId: (int) $request->validated('user_id'),
-            appointmentId: $request->validated('appointment_id') ? (int) $request->validated('appointment_id') : null,
+            appointmentId: $request->validated('appointment_id')
+                ? (int) $request->validated('appointment_id')
+                : null,
             fileName: $request->validated('file_name'),
-            filePath: $request->validated('file_path'),
+            filePath: $filePath, // ✅ actual stored path
             fileType: $request->validated('file_type'),
-            notes: $request->validated('notes')
+            category: $request->validated('category'),
+            isXray: (bool) $request->validated('is_xray'),
+            notes: $request->validated('notes'),
         );
     }
 
     public static function fromUpdateRequest(UpdatePatientAttachmentRequest $request): UpdatePatientAttachmentDTO
     {
         return new UpdatePatientAttachmentDTO(
-            userId: $request->validated('user_id') ? (int) $request->validated('user_id') : null,
-            appointmentId: $request->validated('appointment_id') ? (int) $request->validated('appointment_id') : null,
+            userId: $request->validated('user_id')
+                ? (int) $request->validated('user_id')
+                : null,
+            appointmentId: $request->validated('appointment_id')
+                ? (int) $request->validated('appointment_id')
+                : null,
             fileName: $request->validated('file_name'),
             filePath: $request->validated('file_path'),
             fileType: $request->validated('file_type'),
-            notes: $request->validated('notes')
+            category: $request->validated('category'),
+            isXray: $request->has('is_xray')
+                ? (bool) $request->validated('is_xray')
+                : null,
+            notes: $request->validated('notes'),
         );
     }
 }

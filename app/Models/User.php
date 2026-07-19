@@ -279,4 +279,36 @@ class User extends Authenticatable
                 ->orWhere('phone', 'like', "%{$search}%");
         });
     }
+
+    // ═══════════════════════════════════════════════════════
+// ✅ RELATIONSHIPS
+// ═══════════════════════════════════════════════════════
+
+// ... your existing relationships (branches, appointments, etc.)
+
+    /**
+     * Patient attachments (X-rays, photos, documents)
+     */
+    public function patientAttachments(): HasMany
+    {
+        return $this->hasMany(PatientAttachment::class);
+    }
+
+    /**
+     * Only X-ray attachments
+     */
+    public function xrays(): HasMany
+    {
+        return $this->hasMany(PatientAttachment::class)->where('is_xray', true);
+    }
+
+    /**
+     * Only completed AI scans
+     */
+    public function scannedXrays(): HasMany
+    {
+        return $this->hasMany(PatientAttachment::class)
+            ->where('is_xray', true)
+            ->where('scan_status', 'completed');
+    }
 }
