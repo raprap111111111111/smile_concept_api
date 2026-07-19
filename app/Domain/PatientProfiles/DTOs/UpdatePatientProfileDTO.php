@@ -6,6 +6,13 @@ final readonly class UpdatePatientProfileDTO
 {
     public function __construct(
         public ?int    $userId = null,
+
+        // User account fields, written to the owning User rather than the
+        // profile row.
+        public ?string $name = null,
+        public ?string $email = null,
+        public ?string $phone = null,
+
         public ?string $allergies = null,
         public ?string $medicalHistory = null,
         public ?string $bloodType = null,

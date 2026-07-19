@@ -6,6 +6,7 @@ use App\Domain\PatientProfiles\DTOs\UpdatePatientProfileDTO;
 use App\Domain\PatientProfiles\Repositories\PatientProfileRepository;
 use App\Domain\PatientProfiles\Services\PatientProfileService;
 use App\Models\PatientProfile;
+use Illuminate\Support\Facades\DB;
 
 class UpdatePatientProfileAction
 {
@@ -48,7 +49,22 @@ class UpdatePatientProfileAction
             $data['user_id'] = $dto->userId;
         }
 
+        $userData = array_filter([
+            'name'  => $dto->name,
+            'email' => $dto->email,
+            'phone' => $dto->phone,
+        ], fn($key) => in_array($key, $dto->providedKeys, true), ARRAY_FILTER_USE_KEY);
 
-        return $this->repository->update($profile, $data);
+        // Nothing to write on the account, so stay on the single-row path and
+        // skip the transaction entirely.
+        if ($userData === []) {
+            return $this->repository->update($profile, $data);
+        }
+
+        return DB::transaction(function () use ($profile, $data, $userData) {
+            $profile->user?->update($userData);
+
+            return $this->repository->update($profile, $data);
+        });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\v1\PatientProfile;
 
 use App\Enums\BloodType;
+use App\Models\PatientProfile;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +16,7 @@ class GetAllPatientProfilesRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('patient_profiles.viewAny');
+        return $this->user()->can('viewAny', PatientProfile::class);
     }
 
     protected function prepareForValidation(): void
