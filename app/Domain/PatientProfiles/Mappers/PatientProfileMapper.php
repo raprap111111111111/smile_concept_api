@@ -35,6 +35,9 @@ class PatientProfileMapper
     {
         return new UpdatePatientProfileDTO(
             userId: $request->validated('user_id') ? (int) $request->validated('user_id') : null,
+            name: $request->validated('name'),
+            email: $request->validated('email'),
+            phone: $request->validated('phone'),
             allergies: $request->validated('allergies'),
             medicalHistory: $request->validated('medical_history'),
             bloodType: $request->validated('blood_type'),

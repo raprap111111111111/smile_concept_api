@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\v1\PatientAttachment;
 
+use App\Models\PatientAttachment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,7 +15,7 @@ class GetAllPatientAttachmentsRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('patient_attachments.viewAny');
+        return $this->user()->can('viewAny', PatientAttachment::class);
     }
 
     protected function prepareForValidation(): void

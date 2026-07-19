@@ -16,9 +16,23 @@ class UpdatePatientProfileRequest extends FormRequest
 
     public function rules(): array
     {
-        $profileId = $this->route('patient_profile')?->id;
+        $profile   = $this->route('patient_profile');
+        $profileId = $profile?->id;
 
         return [
+            // ─── User account fields ───────────────────────
+            // The edit form sends these alongside the medical fields; without
+            // rules they never reach validated() and the change is dropped.
+            'name'  => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($profile?->user_id),
+            ],
+            'phone' => ['sometimes', 'nullable', 'string', 'max:20'],
+
             'user_id' => [
                 'sometimes',
                 'required',
