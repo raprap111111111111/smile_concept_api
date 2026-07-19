@@ -17,8 +17,8 @@ class StoreItemRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['required', 'string', 'max:100', 'unique:items,sku'],
-            'category' => ['required', 'string', 'max:100'], // e.g., PPE, Restorative, Anesthetics
-            'unit_of_measure' => ['required', 'string', 'max:50'], // e.g., box, bottle, piece
+            'category' => ['required', 'string', 'max:100'], 
+            'unit_of_measure' => ['required', 'string', 'max:50'], 
             'minimum_threshold' => ['nullable', 'integer', 'min:0'],
         ];
     }

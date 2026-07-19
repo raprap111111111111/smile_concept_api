@@ -1,15 +1,17 @@
 <?php
-
+// CreatePatientAttachmentDTO.php
 namespace App\Domain\PatientAttachments\DTOs;
 
-final readonly class CreatePatientAttachmentDTO
+class CreatePatientAttachmentDTO
 {
     public function __construct(
-        public int $userId,
-        public ?int $appointmentId,
-        public string $fileName,
-        public string $filePath,
-        public string $fileType,
-        public ?string $notes = null
+        public readonly int     $userId,
+        public readonly ?int    $appointmentId,
+        public readonly string  $fileName,
+        public readonly string  $filePath,
+        public readonly string  $fileType,
+        public readonly string  $category,
+        public readonly bool    $isXray,
+        public readonly ?string $notes,
     ) {}
 }
