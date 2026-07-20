@@ -50,6 +50,10 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Appointments ──────────────────────────────────────
                 'appointment'        => array_merge($basicCrud, [
+                    // Staff book on behalf of patients, so `create` alone is not
+                    // enough: without this the appointment is silently saved
+                    // against the staff member's own user_id.
+                    'create-for-others',
                     'approve',
                     'reject',
                     'cancel',
@@ -230,6 +234,9 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Appointments ──────────────────────────────────────
                 'appointment'      => array_merge($basicCrud, [
+                    // Booking for walk-ins and phone calls is the front desk's
+                    // core job — see the note on the admin role above.
+                    'create-for-others',
                     'approve',
                     'reject',
                     'cancel',

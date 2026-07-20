@@ -43,7 +43,20 @@ class UserSeeder extends Seeder
         // 4. Safely assign the "dentist" role
         // Since User model defaults to 'api', we only pass the role name.
         if (method_exists($user, 'assignRole')) {
-            $user->assignRole('dentist'); 
+            $user->assignRole('dentist');
         }
+
+        // 5. Create the Receptionist / front desk user
+        $receptionist = User::updateOrCreate(
+            ['email' => 'receptionist@smileconcept.com'],
+            [
+                'name'     => 'Front Desk Receptionist',
+                'password' => Hash::make('Password'),
+                'phone'    => '0900 000 0000',
+            ]
+        );
+
+        $receptionist->branches()->sync($branchIds);
+        $receptionist->assignRole('receptionist');
     }
 }
