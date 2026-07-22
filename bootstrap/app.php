@@ -6,6 +6,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,7 +19,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(Cors::class);
-        //
+
+        // Spatie's guards are referenced by alias in the route files
+        // (e.g. `permission:dashboard.view`); without these registrations
+        // every guarded route dies with "Target class [permission] does not exist".
+        $middleware->alias([
+            'role'               => RoleMiddleware::class,
+            'permission'         => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+        ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
 
