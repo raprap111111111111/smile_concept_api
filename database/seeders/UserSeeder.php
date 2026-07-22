@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Branch;
+use App\Models\PatientProfile;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -25,38 +26,62 @@ class UserSeeder extends Seeder
             );
         }
 
-        // 2. Create the Doctor User
-        $user = User::updateOrCreate(
-            ['email' => 'juvileannmansader@gmail.com'],
-            [
-                'name' => 'DR. JUVILE ANN LEGISLADOR MANSADER',
-                'password' => Hash::make('Password'),
-                'phone' => '0994 366 5968',
-            ]
-        );
+        // Dentist accounts are owned by DoctorSeeder — it creates the matching
+        // `doctors` profile row too. Seeding one here as well meant whichever
+        // seeder ran last decided the password.
 
-        // 3. Attach Branches
-        if (method_exists($user, 'branches')) {
-            $user->branches()->sync($branchIds);
-        }
-
-        // 4. Safely assign the "dentist" role
-        // Since User model defaults to 'api', we only pass the role name.
-        if (method_exists($user, 'assignRole')) {
-            $user->assignRole('dentist');
-        }
-
-        // 5. Create the Receptionist / front desk user
+        // 2. Create the Receptionist / front desk user
         $receptionist = User::updateOrCreate(
             ['email' => 'receptionist@smileconcept.com'],
             [
-                'name'     => 'Front Desk Receptionist',
-                'password' => Hash::make('Password'),
-                'phone'    => '0900 000 0000',
+                'name'              => 'Front Desk Receptionist',
+                'password'          => Hash::make('password'),
+                'phone'             => '0900 000 0000',
+                'email_verified_at' => now(),
             ]
         );
 
         $receptionist->branches()->sync($branchIds);
         $receptionist->assignRole('receptionist');
+
+        // 3. Create the Clinic Admin user
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@smileconcept.com'],
+            [
+                'name'              => 'Clinic Administrator',
+                'password'          => Hash::make('password'),
+                'phone'             => '0900 000 0001',
+                'email_verified_at' => now(),
+            ]
+        );
+
+        $admin->branches()->sync($branchIds);
+        $admin->assignRole('admin');
+
+        // 4. Create the demo Patient user (self-service portal)
+        $patient = User::updateOrCreate(
+            ['email' => 'patient@smileconcept.com'],
+            [
+                'name'              => 'Demo Patient',
+                'password'          => Hash::make('password'),
+                'phone'             => '0900 000 0002',
+                'email_verified_at' => now(),
+            ]
+        );
+
+        $patient->branches()->sync([$branchIds[0]]);
+        $patient->assignRole('patient');
+
+        PatientProfile::updateOrCreate(
+            ['user_id' => $patient->id],
+            [
+                'date_of_birth'           => '1995-01-15',
+                'gender'                  => 'female',
+                'civil_status'            => 'single',
+                'address'                 => 'Default Patient Address',
+                'emergency_contact_name'  => 'Emergency Contact',
+                'emergency_contact_phone' => '0900 000 0003',
+            ]
+        );
     }
 }
