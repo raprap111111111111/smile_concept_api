@@ -14,6 +14,7 @@ class UserMapper
         return new CreateUserDTO(
             name: $request->validated('name'),
             email: $request->validated('email'),
+            role: $request->validated('role'),
             phone: $request->validated('phone'),
             branchId: $request->validated('branch_id'),
             password: $request->validated('password'),

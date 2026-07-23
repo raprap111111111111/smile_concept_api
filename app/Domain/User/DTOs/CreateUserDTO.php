@@ -7,9 +7,10 @@ final readonly class CreateUserDTO
     public function __construct(
         public string $name,
         public string $email,
+        public string $role,
+        public string $password,
         public ?string $phone = null,
         public ?int $branchId = null,
-        public string $password,
         public bool $isActive = true,
     ) {}
 }
