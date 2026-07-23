@@ -166,6 +166,14 @@ class RolePermissionSeeder extends Seeder
                 'dashboard'        => ['view'],
                 'notification'     => ['viewAny', 'view', 'update'],
 
+                // ── User Management ───────────────────────────────────
+                // Dentists may create staff accounts. `role` is read-only so
+                // the create form can list assignable roles; StoreUserRequest
+                // still blocks `patient` and reserves `super-admin` for
+                // super-admins.
+                'user'             => ['viewAny', 'view', 'create'],
+                'role'             => $readOnly,
+
                 // ── Schedule ──────────────────────────────────────────
                 'doctor'           => $readOnly,
                 'doctor-schedule'  => $readOnly,

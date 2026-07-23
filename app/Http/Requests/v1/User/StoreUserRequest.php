@@ -34,17 +34,26 @@ class StoreUserRequest extends FormRequest
 
     public function withValidator($validator): void
     {
-        // Only a super-admin may mint another super-admin. Without this an
-        // ordinary admin (who holds `user.create`) could escalate by handing
-        // out the top-level role.
+        // Prevent privilege escalation: a creator may not hand out a role more
+        // powerful than their own. `super-admin` requires super-admin; `admin`
+        // requires admin or super-admin. This keeps a dentist (who now holds
+        // `user.create`) from minting admin or super-admin accounts.
         $validator->after(function ($validator) {
+            $role    = $this->input('role');
+            $creator = $this->user();
+
+            $requiredRoles = [
+                'super-admin' => ['super-admin'],
+                'admin'       => ['admin', 'super-admin'],
+            ];
+
             if (
-                $this->input('role') === 'super-admin'
-                && ! $this->user()->hasRole('super-admin')
+                isset($requiredRoles[$role])
+                && ! $creator->hasAnyRole($requiredRoles[$role])
             ) {
                 $validator->errors()->add(
                     'role',
-                    'You are not allowed to assign the super-admin role.'
+                    "You are not allowed to assign the {$role} role."
                 );
             }
         });
