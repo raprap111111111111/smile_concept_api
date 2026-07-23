@@ -31,11 +31,17 @@ class PatientAttachment extends Model
         'is_xray'             => 'boolean',
         'scan_confidence'     => 'float',
         'detected_conditions' => 'array',
+        'scan_results'        => 'array',
         'scanned_at'          => 'datetime',
         'appointment_id'      => 'integer',
         'user_id'             => 'integer',
     ];
 
+    // ─── Relationships ────────────────────────────────────
+
+    /**
+     * The patient who OWNS this attachment.
+     */
     public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -44,13 +50,5 @@ class PatientAttachment extends Model
     public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
-    }
-
-    /**
-     * Alias — same as patient()
-     */
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 }

@@ -84,6 +84,14 @@ abstract class BaseRepository
         $offset = $this->resolveOffset($params);
         $page = $this->resolvePage($offset, $limit);
 
+        // 🔴 DEBUG — right before pagination
+        \Log::info('═══ BEFORE $query->paginate() ═══', [
+            'sql'      => $query->toSql(),
+            'bindings' => $query->getBindings(),
+            'wheres'   => $query->getQuery()->wheres,
+            'params'   => $params,
+        ]);
+
         $paginator = $query->paginate(
             perPage: $limit,
             columns: ['*'],
@@ -91,24 +99,27 @@ abstract class BaseRepository
             page: $page
         );
 
+        // 🔴 DEBUG — after
+        \Log::info('═══ AFTER $query->paginate() ═══', [
+            'total' => $paginator->total(),
+            'count' => count($paginator->items()),
+        ]);
+
         $items = $paginator->items();
 
         return [
             'records' => $resourceClass && ! empty($items)
                 ? $resourceClass::collection($items)
                 : $items,
-
             'total' => $paginator->total(),
             'offset' => $offset,
             'limit' => $limit,
-
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
             'per_page' => $paginator->perPage(),
             'has_more' => $paginator->hasMorePages(),
         ];
     }
-
     protected function applyDefaultSort(Builder $query, array $params): void
     {
         if (! empty($params['order_by'])) {
