@@ -14,7 +14,10 @@ class GetAllRoleRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('roles.viewAny');
+        // Permission catalog defines the singular `role.viewAny`; the plural
+        // `roles.viewAny` never existed, so only super-admin (via Gate::before)
+        // could list roles. Match the catalog so granted permissions apply.
+        return $this->user()->can('role.viewAny');
     }
 
     protected function prepareForValidation(): void
