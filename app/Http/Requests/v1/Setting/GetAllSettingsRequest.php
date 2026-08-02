@@ -9,11 +9,11 @@ class GetAllSettingsRequest extends FormRequest
 {
     private const MAX_LIMIT = 100;
 
+    // GetAllSettingsRequest.php
     public function authorize(): bool
     {
-        return $this->user()->can('settings.viewAny');
+        return $this->user()->can('setting.view');
     }
-
     protected function prepareForValidation(): void
     {
         $this->merge([

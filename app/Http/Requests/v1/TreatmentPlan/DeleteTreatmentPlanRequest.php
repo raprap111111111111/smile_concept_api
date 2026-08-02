@@ -8,7 +8,7 @@ class DeleteTreatmentPlanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $plan = $this->route('treatment_plan');
+        $plan = $this->route('treatment-plan');
         return $plan && $this->user()->can('delete', $plan);
     }
 

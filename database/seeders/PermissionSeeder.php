@@ -21,9 +21,9 @@ class PermissionSeeder extends Seeder
             // 📊 PHASE 0: DASHBOARD & SETTINGS
             // ═══════════════════════════════════════════
             'dashboard'        => ['view'],
-            'setting'          => ['view', 'update'],
-            'activity-log'     => ['viewAny', 'view', 'export'],   // ✅ merged audit-log here
-            'notification'     => ['viewAny', 'view', 'create', 'update', 'delete'], // ✅ added create
+            'setting'          => ['view', 'update'],  
+            'activity-log'     => ['viewAny', 'view', 'export'],   
+            'notification'     => ['viewAny', 'view', 'create', 'update', 'delete'], 
 
             // ═══════════════════════════════════════════
             // 🔐 PHASE 1: SECURITY & IDENTITY
@@ -194,6 +194,8 @@ class PermissionSeeder extends Seeder
             // 🔧 SYSTEM
             // ═══════════════════════════════════════════
             'backup'           => ['create', 'restore', 'download', 'delete'],
+
+            'item'          => $crud,
 
         ];
 

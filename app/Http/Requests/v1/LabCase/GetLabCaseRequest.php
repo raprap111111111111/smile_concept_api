@@ -8,7 +8,7 @@ class GetLabCaseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $labCase = $this->route('lab_case');
+        $labCase = $this->route('lab-case');
         return $labCase && $this->user()->can('view', $labCase);
     }
 

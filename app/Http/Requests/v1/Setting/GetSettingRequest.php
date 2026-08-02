@@ -8,7 +8,8 @@ class GetSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('settings.view');
+        // GetSettingRequest.php  (already correct)
+        return $this->user()->can('setting.view');
     }
 
     public function rules(): array

@@ -11,7 +11,7 @@ class ChangeTreatmentPlanStatusRequest extends FormRequest
     public function authorize(): bool
     {
         $user          = $this->user();
-        $treatmentPlan = $this->route('treatmentPlan');
+        $treatmentPlan = $this->route('treatment-plan');
         $targetStatus  = TreatmentPlanStatus::tryFrom($this->input('status'));
 
         if (!$user || !$treatmentPlan || !$targetStatus) {

@@ -14,7 +14,7 @@ class GetAllItemsRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('items.viewAny');
+        return $this->user()->can('item.viewAny');
     }
 
     protected function prepareForValidation(): void

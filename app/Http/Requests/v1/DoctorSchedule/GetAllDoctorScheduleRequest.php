@@ -14,7 +14,7 @@ class GetAllDoctorScheduleRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('doctor_schedules.viewAny');
+        return $this->user()->can('doctor-schedule.viewAny');
     }
 
     protected function prepareForValidation(): void

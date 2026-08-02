@@ -14,7 +14,7 @@ class GetAllInventoriesRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('inventories.viewAny');
+        return $this->user()->can('inventory.viewAny');
     }
 
     protected function prepareForValidation(): void

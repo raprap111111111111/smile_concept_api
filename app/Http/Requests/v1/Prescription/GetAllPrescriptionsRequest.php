@@ -14,7 +14,7 @@ class GetAllPrescriptionsRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('prescriptions.viewAny');
+        return $this->user()->can('prescription.viewAny');
     }
 
     protected function prepareForValidation(): void

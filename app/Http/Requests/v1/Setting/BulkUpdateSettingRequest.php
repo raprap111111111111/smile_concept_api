@@ -8,7 +8,7 @@ class BulkUpdateSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('settings.update');
+        return $this->user()->can('setting.update');
     }
 
     public function rules(): array

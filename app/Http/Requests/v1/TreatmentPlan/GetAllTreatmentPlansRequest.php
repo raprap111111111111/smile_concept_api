@@ -15,7 +15,7 @@ class GetAllTreatmentPlansRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('treatment_plans.viewAny');
+        return $this->user()->can('treatment-plan.viewAny');
     }
 
     protected function prepareForValidation(): void

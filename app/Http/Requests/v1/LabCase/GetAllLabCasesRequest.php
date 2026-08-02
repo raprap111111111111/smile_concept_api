@@ -14,7 +14,7 @@ class GetAllLabCasesRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('lab_cases.viewAny');
+        return $this->user()->can('lab-case.viewAny');
     }
 
     protected function prepareForValidation(): void
