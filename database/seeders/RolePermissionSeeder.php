@@ -178,6 +178,12 @@ class RolePermissionSeeder extends Seeder
                 'doctor'           => $readOnly,
                 'doctor-schedule'  => $readOnly,
 
+                // ── Branch ────────────────────────────────────────────
+                // Read-only: every schedule/inventory/appointment form has a
+                // branch picker that calls GET /branches, which requires
+                // `branch.viewAny`. Without it the dropdown 403s.
+                'branch'           => $readOnly,
+
                 // ── Appointments ──────────────────────────────────────
                 'appointment'      => array_merge($readOnly, [
                     'update',
@@ -264,6 +270,11 @@ class RolePermissionSeeder extends Seeder
                 // ── Doctors & Schedules ───────────────────────────────
                 'doctor'           => $readOnly,
                 'doctor-schedule'  => $readOnly,
+
+                // ── Branch ────────────────────────────────────────────
+                // Read-only, same reason as the dentist role: the branch
+                // picker on booking/inventory forms calls GET /branches.
+                'branch'           => $readOnly,
 
                 // ── Treatment Plans ───────────────────────────────────
                 'treatment-plan'   => array_merge($readOnly, ['send-to-patient']),
