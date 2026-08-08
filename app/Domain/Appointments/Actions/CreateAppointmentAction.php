@@ -7,6 +7,8 @@ use App\Domain\AppointmentReminders\Actions\ScheduleReminderAction;
 use App\Domain\Appointments\DTOs\CreateAppointmentDTO;
 use App\Domain\Appointments\Repositories\AppointmentRepository;
 use App\Domain\Appointments\Services\AppointmentService;
+use App\Events\Appointments\AppointmentCreated;
+use App\Events\Dashboard\DashboardCountersStale;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Notifications\AppointmentBookedNotification;
@@ -118,6 +120,18 @@ class CreateAppointmentAction
 
         // ─── 5. Notify patient + admins ───────────────────────────────
         $this->sendNotifications($appointment);
+
+        // ─── 6. Broadcast to connected clients ────────────────────────
+        AppointmentCreated::dispatch($appointment);
+
+        DashboardCountersStale::dispatch(
+            [
+                DashboardCountersStale::SCOPE_STATS,
+                DashboardCountersStale::SCOPE_SCHEDULE,
+                DashboardCountersStale::SCOPE_ACTIVITY,
+            ],
+            'appointment.created',
+        );
 
         return $appointment;
     }

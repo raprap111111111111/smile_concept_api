@@ -159,16 +159,19 @@ class User extends Authenticatable
 
     /**
      * Check if user has any staff role
+     *
+     * Role names here must match the seeded roles, which are exactly:
+     * super-admin, admin, dentist, receptionist, patient. The previous list
+     * asked for 'doctor', 'assistant' and 'staff' — none of which exist — and
+     * omitted 'dentist', so every dentist was treated as non-staff.
      */
     public function isStaff(): bool
     {
         return $this->hasAnyRole([
             'super-admin',
             'admin',
-            'doctor',
+            'dentist',
             'receptionist',
-            'assistant',
-            'staff',
         ]);
     }
 

@@ -5,19 +5,45 @@ namespace App\Providers;
 use App\Domain\Auth\Repositories\UserRepository;
 use App\Domain\Auth\Repositories\UserRepositoryInterface;
 use Illuminate\Foundation\Console\ServeCommand;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
+use Laravel\Reverb\ApplicationManagerServiceProvider;
+use Laravel\Reverb\ReverbServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+
+        // Reverb is excluded from package auto-discovery (composer.json
+        // `extra.laravel.dont-discover`) and registered from here instead.
+        //
+        // ReverbServiceProvider::register() calls DevCommands::artisan() to add
+        // `reverb:start` to `php artisan dev`. Laravel 13's
+        // DevCommands::preventVendorRegistration() walks the backtrace and throws
+        // unless one frame lives outside vendor/ — so when Reverb self-registers
+        // via auto-discovery, every artisan command dies with "DevCommands should
+        // be registered in application code, not within vendor packages".
+        // Registering here puts this file in that backtrace, which is exactly the
+        // application-code frame the guard looks for.
+        $this->app->register(ApplicationManagerServiceProvider::class);
+        $this->app->register(ReverbServiceProvider::class);
     }
 
     public function boot(): void
     {
+        // `php artisan dev` runs its panes under a kill-others supervisor, and
+        // Pail hard-requires ext-pcntl, which does not exist on Windows. Without
+        // this the logs pane throws on startup and takes the API, Reverb, queue
+        // and vite down with it — `php artisan dev` is unusable otherwise.
+        // Use `php artisan pail` directly on a platform that has pcntl.
+        if (PHP_OS_FAMILY === 'Windows') {
+            DevCommands::except('logs');
+        }
+
         // `artisan serve` blanks every environment variable that is not on its
         // passthrough allowlist. On Windows that includes TMP/TEMP, which PHP
         // needs to create the temporary file for an uploaded file — without
