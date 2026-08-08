@@ -12,10 +12,20 @@ use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
+        // Deliberately NO `channels:` argument here. withRouting() forwards it to
+        // withBroadcasting() with no attributes, which defaults to
+        // ['middleware' => ['web']] — the session guard. Our clients authenticate
+        // with Passport bearer tokens, so /broadcasting/auth would always 401.
+        // Registered below instead, with the api guard. Leaving both in place
+        // registers the route twice and the web-guarded one wins.
         web:      __DIR__ . '/../routes/web.php',
         api:      __DIR__ . '/../routes/api.php',
         commands: __DIR__ . '/../routes/console.php',
         health:   '/up',
+    )
+    ->withBroadcasting(
+        __DIR__ . '/../routes/channels.php',
+        attributes: ['middleware' => ['auth:api']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(Cors::class);

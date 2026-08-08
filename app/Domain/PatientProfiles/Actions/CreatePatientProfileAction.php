@@ -5,6 +5,7 @@ namespace App\Domain\PatientProfiles\Actions;
 use App\Domain\PatientProfiles\DTOs\CreatePatientProfileDTO;
 use App\Domain\PatientProfiles\Repositories\PatientProfileRepository;
 use App\Domain\PatientProfiles\Services\PatientProfileService;
+use App\Events\Dashboard\DashboardCountersStale;
 use App\Models\PatientProfile;
 use App\Models\User;
 use App\Notifications\NewPatientRegisteredNotification;
@@ -64,6 +65,17 @@ class CreatePatientProfileAction
 
         // ─── 4. Notify admins (OUTSIDE transaction) ─────────
         $this->notifyAdmins($profile->user);
+
+        // ─── 5. Broadcast to connected clients ──────────────
+        // A new patient changes headline counts and shows up in the activity
+        // feed, but touches nobody's schedule.
+        DashboardCountersStale::dispatch(
+            [
+                DashboardCountersStale::SCOPE_STATS,
+                DashboardCountersStale::SCOPE_ACTIVITY,
+            ],
+            'patient.created',
+        );
 
         return $profile;
     }

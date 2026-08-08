@@ -5,6 +5,8 @@ namespace App\Domain\Appointments\Actions;
 use App\Domain\ActivityLogs\Services\ActivityLogger;
 use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
 use App\Enums\AppointmentStatus;
+use App\Events\Appointments\AppointmentStatusChanged;
+use App\Events\Dashboard\DashboardCountersStale;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Notifications\AppointmentBookedNotification;
@@ -77,6 +79,23 @@ class UpdateAppointmentStatusAction
 
         // ─── 8. Dispatch notifications ───────────────────────
         $this->dispatchNotifications($appointment, $previousStatus, $newStatus, $cancellationReason);
+
+        // ─── 9. Broadcast to connected clients ───────────────
+        // validateTransition() treats same-status as a no-op and returns rather
+        // than throwing, so execute() still runs to completion on a redundant
+        // PATCH. Guarding here keeps those off the wire.
+        if ($previousStatus !== $newStatus) {
+            AppointmentStatusChanged::dispatch($appointment, $previousStatus->value);
+
+            DashboardCountersStale::dispatch(
+                [
+                    DashboardCountersStale::SCOPE_STATS,
+                    DashboardCountersStale::SCOPE_SCHEDULE,
+                    DashboardCountersStale::SCOPE_ACTIVITY,
+                ],
+                'appointment.status_changed',
+            );
+        }
 
         return $appointment;
     }

@@ -8,6 +8,9 @@ use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
 use App\Domain\Appointments\DTOs\UpdateAppointmentDTO;
 use App\Domain\Appointments\Repositories\AppointmentRepository;
 use App\Domain\Appointments\Services\AppointmentService;
+use App\Enums\AppointmentStatus;
+use App\Events\Appointments\AppointmentStatusChanged;
+use App\Events\Dashboard\DashboardCountersStale;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Notifications\AppointmentRescheduledNotification;
@@ -103,7 +106,34 @@ class UpdateAppointmentAction
                 $this->sendRescheduleAlerts($updated);
             }
 
-            return $updated->load(['user', 'doctor.user', 'branch']);
+            $updated->load(['user', 'doctor.user', 'branch']);
+
+            // ─── 7. Broadcast to connected clients ───────────
+            // Reuses the status-changed event because the client handler patches
+            // the whole appointment in place, times included — a reschedule and
+            // a status change need the same client-side treatment.
+            //
+            // Both events are ShouldDispatchAfterCommit, so dispatching inside
+            // this transaction is safe: nothing goes on the wire until it
+            // commits, and a rollback (e.g. the conflict throw above) broadcasts
+            // nothing at all.
+            AppointmentStatusChanged::dispatch(
+                $updated,
+                $updated->status instanceof AppointmentStatus
+                    ? $updated->status->value
+                    : (string) $updated->status,
+            );
+
+            DashboardCountersStale::dispatch(
+                [
+                    DashboardCountersStale::SCOPE_STATS,
+                    DashboardCountersStale::SCOPE_SCHEDULE,
+                    DashboardCountersStale::SCOPE_ACTIVITY,
+                ],
+                'appointment.updated',
+            );
+
+            return $updated;
         });
     }
 

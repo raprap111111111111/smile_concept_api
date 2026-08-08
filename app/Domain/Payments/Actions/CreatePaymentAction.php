@@ -6,6 +6,7 @@ use App\Domain\Payments\DTOs\CreatePaymentDTO;
 use App\Domain\Payments\Repositories\PaymentRepository;
 use App\Domain\Payments\Services\PaymentService;
 use App\Enums\InvoiceStatus;
+use App\Events\Dashboard\DashboardCountersStale;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\User;
@@ -53,6 +54,16 @@ class CreatePaymentAction
 
         // ─── 3. Check if invoice is fully paid ────────────────
         $this->sendPaymentNotifications($payment);
+
+        // ─── 4. Broadcast to connected clients ────────────────
+        // No schedule scope: a payment does not move any appointment.
+        DashboardCountersStale::dispatch(
+            [
+                DashboardCountersStale::SCOPE_STATS,
+                DashboardCountersStale::SCOPE_ACTIVITY,
+            ],
+            'payment.created',
+        );
 
         return $payment;
     }
