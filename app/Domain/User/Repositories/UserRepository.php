@@ -12,7 +12,10 @@ class UserRepository extends BaseRepository
 
     protected array $relations  = ['roles', 'branches', 'patientProfile'];
     protected array $searchable = ['name', 'email', 'phone'];
-    protected array $filterable = ['branch_id', 'is_active'];
+    // `is_active` is not a column on `users` — GetAllUserRequest validates it,
+    // but there is nothing to filter against. Listing it here would raise
+    // "Unknown column" now that filters are actually applied.
+    protected array $filterable = ['branch_id'];
     protected array $sortable   = ['name', 'email', 'created_at'];
 
     protected string $defaultOrderBy        = 'created_at';

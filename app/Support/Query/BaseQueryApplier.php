@@ -13,7 +13,7 @@ class BaseQueryApplier
         array $sortable = [],
         array $filterable = []
     ): Builder {
-        $filters = $params['filters'] ?? [];
+        $filters = static::resolveFilters($params, $filterable);
         $search = $params['search'] ?? null;
         $orderBy = $params['order_by'] ?? null;
         $orderDir = $params['order_dir'] ?? 'asc';
@@ -23,6 +23,45 @@ class BaseQueryApplier
         static::applySorting($query, $orderBy, $orderDir, $sortable);
 
         return $query;
+    }
+
+    /**
+     * Filters arrive one of two ways: nested under `filters`, or as top-level
+     * keys — which is what every FormRequest in this app actually validates and
+     * what `$request->validated()` hands the repository.
+     *
+     * Only reading the nested form meant `$filters` was always empty and
+     * `applyFilters()` returned immediately, so every declared filter silently
+     * no-opped: `?day_of_week=1` returned all seven days. Top-level keys are
+     * promoted here so the declared filters do what they say.
+     *
+     * A nested entry still wins, since that form is explicit.
+     */
+    protected static function resolveFilters(array $params, array $filterable): array
+    {
+        $filters = $params['filters'] ?? [];
+
+        foreach ($filterable as $field => $type) {
+            // `$filterable` may be a plain list or a field => type map.
+            if (is_int($field)) {
+                $field = $type;
+                $type = 'exact';
+            }
+
+            // Range filters read `<field>_from` / `<field>_to` rather than the
+            // bare field, so those keys have to be promoted too.
+            $keys = in_array($type, ['range', 'date_range'], true)
+                ? [$field, $field . '_from', $field . '_to']
+                : [$field];
+
+            foreach ($keys as $key) {
+                if (!array_key_exists($key, $filters) && isset($params[$key])) {
+                    $filters[$key] = $params[$key];
+                }
+            }
+        }
+
+        return $filters;
     }
 
     protected static function applySearch(
