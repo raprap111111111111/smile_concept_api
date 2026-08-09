@@ -3,14 +3,17 @@
 namespace App\Notifications;
 
 use App\Models\Appointment;
+use App\Notifications\Concerns\NotifiesAppointmentPatient;
+use App\Notifications\Contracts\RoutesAppointmentMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class AppointmentCancelledNotification extends Notification implements ShouldQueue
+class AppointmentCancelledNotification extends Notification implements ShouldQueue, RoutesAppointmentMail
 {
-    use Queueable;
+    use Queueable, SerializesModels, NotifiesAppointmentPatient;
 
     public function __construct(
         public readonly Appointment $appointment,
@@ -19,13 +22,12 @@ class AppointmentCancelledNotification extends Notification implements ShouldQue
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->patientChannels($notifiable);
     }
 
     public function toDatabase(object $notifiable): array
     {
-        $when = \Carbon\Carbon::parse($this->appointment->start_time)
-            ->format('l, F j, Y \a\t g:i A');
+        $when = $this->appointment->start_time?->format('l, F j, Y \a\t g:i A');
 
         $message = "The appointment on {$when} has been cancelled.";
 
@@ -46,17 +48,10 @@ class AppointmentCancelledNotification extends Notification implements ShouldQue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $mail = (new MailMessage)
-            ->subject('Appointment Cancelled')
-            ->greeting("Hello {$notifiable->name},")
-            ->line("Your appointment scheduled for {$this->appointment->start_time} has been cancelled.");
-
-        if ($this->reason) {
-            $mail->line("Reason: {$this->reason}");
-        }
-
-        return $mail
-            ->action('Book a New Appointment', url('/book'))
-            ->line('We hope to see you soon!');
+        return (new MailMessage)
+            ->subject('Your appointment has been cancelled')
+            ->markdown('emails.appointments.cancelled', $this->appointmentMailData([
+                'reason' => $this->reason,
+            ]));
     }
 }

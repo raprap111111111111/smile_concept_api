@@ -3,29 +3,40 @@
 namespace App\Notifications;
 
 use App\Models\Appointment;
-use Carbon\Carbon;
+use App\Notifications\Concerns\NotifiesAppointmentPatient;
+use App\Notifications\Contracts\RoutesAppointmentMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class AppointmentReminderNotification extends Notification implements ShouldQueue
+class AppointmentReminderNotification extends Notification implements ShouldQueue, RoutesAppointmentMail
 {
-    use Queueable;
+    use Queueable, SerializesModels, NotifiesAppointmentPatient;
 
+    /**
+     * @param  string  $reminderChannel  Which reminder row triggered this --
+     *         'email', 'sms', 'push' or 'in_app'. ReminderScheduler creates one
+     *         row per channel per offset, and every channel funnels through
+     *         this same notification, so without it a single appointment would
+     *         send an email for each row. Defaults to in_app so an unmigrated
+     *         caller fails closed (bell only), never with a surprise email.
+     */
     public function __construct(
         public readonly Appointment $appointment,
         public readonly int         $hoursBefore = 24,
+        public readonly string      $reminderChannel = 'in_app',
     ) {}
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->patientChannels($notifiable, wantsMail: $this->reminderChannel === 'email');
     }
 
     public function toDatabase(object $notifiable): array
     {
-        $when = Carbon::parse($this->appointment->start_time)->diffForHumans();
+        $when = $this->appointment->start_time?->diffForHumans();
 
         return [
             'title'          => 'Appointment Reminder',
@@ -40,16 +51,12 @@ class AppointmentReminderNotification extends Notification implements ShouldQueu
 
     public function toMail(object $notifiable): MailMessage
     {
-        $startTime = Carbon::parse($this->appointment->start_time)->format('l, F j, Y \a\t g:i A');
-
         return (new MailMessage)
-            ->subject("Appointment Reminder — {$this->hoursBefore}h Away")
-            ->greeting("Hi {$notifiable->name},")
-            ->line("This is a friendly reminder that you have a scheduled appointment.")
-            ->line("**When:** {$startTime}")
-            ->line("**Doctor:** " . ($this->appointment->doctor?->user?->name ?? 'N/A'))
-            ->line("**Branch:** " . ($this->appointment->branch?->name ?? 'N/A'))
-            ->action('View Appointment', url("/appointments/{$this->appointment->id}"))
-            ->line('Please arrive 10 minutes early. If you need to reschedule, contact us as soon as possible.');
+            ->subject($this->hoursBefore <= 2
+                ? 'Your appointment is coming up shortly'
+                : "Reminder: your appointment is in {$this->hoursBefore} hours")
+            ->markdown('emails.appointments.reminder', $this->appointmentMailData([
+                'hoursBefore' => $this->hoursBefore,
+            ]));
     }
 }

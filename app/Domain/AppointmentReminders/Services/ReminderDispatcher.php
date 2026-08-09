@@ -25,9 +25,14 @@ class ReminderDispatcher
             throw new \RuntimeException("Appointment has no associated user.");
         }
 
-        // Calculate hours until appointment
-        $hoursBefore = (int) Carbon::parse($appointment->start_time)
-            ->diffInHours(now());
+        // How far ahead this reminder was meant to land. Derived from the
+        // reminder row rather than now(): the scheduler runs every five
+        // minutes, so measuring against the clock turns a 24h reminder into
+        // 23h. Carbon 3 also returns a signed float, and the receiver/argument
+        // order here used to be inverted, which made every value negative.
+        $hoursBefore = (int) round(
+            Carbon::parse($reminder->scheduled_for)->diffInHours($appointment->start_time)
+        );
 
         match ($reminder->channel) {
             'email'  => $this->sendEmail($reminder, $patient, $appointment, $hoursBefore),
@@ -42,7 +47,11 @@ class ReminderDispatcher
 
     /**
      * Send via email + database (bell).
-     * The notification's via() method returns ['database', 'mail'].
+     *
+     * The 'email' third argument is what puts 'mail' into the notification's
+     * via(). Every channel below funnels through the same notification class,
+     * so only this one may pass it -- otherwise a single appointment emails
+     * once per reminder row.
      */
     private function sendEmail(
         AppointmentReminder $reminder,
@@ -50,19 +59,21 @@ class ReminderDispatcher
         $appointment,
         int $hoursBefore
     ): void {
-        if (!$patient->email) {
-            throw new \RuntimeException('Patient has no email address.');
+        // Checks the resolved address, not $patient->email: a booking made for
+        // a spouse carries its own patient_email and should still go out even
+        // if the account holder has none.
+        if ($appointment->notificationEmail() === null) {
+            throw new \RuntimeException('Appointment has no email address to notify.');
         }
 
-        // ✅ Uses your AppointmentReminderNotification
         $patient->notify(
-            new AppointmentReminderNotification($appointment, $hoursBefore)
+            new AppointmentReminderNotification($appointment, $hoursBefore, 'email')
         );
 
         Log::info("Email reminder sent", [
             'reminder_id'    => $reminder->id,
             'appointment_id' => $appointment->id,
-            'email'          => $patient->email,
+            'email'          => $appointment->notificationEmail(),
         ]);
     }
 
@@ -82,7 +93,7 @@ class ReminderDispatcher
         // TODO: Integrate real SMS provider (Twilio/Semaphore)
         // For now, notify creates a bell entry which is fine
         $patient->notify(
-            new AppointmentReminderNotification($appointment, $hoursBefore)
+            new AppointmentReminderNotification($appointment, $hoursBefore, 'sms')
         );
 
         Log::info("SMS reminder sent", [
@@ -102,7 +113,7 @@ class ReminderDispatcher
     ): void {
         // TODO: Integrate FCM/APNs
         $patient->notify(
-            new AppointmentReminderNotification($appointment, $hoursBefore)
+            new AppointmentReminderNotification($appointment, $hoursBefore, 'push')
         );
 
         Log::info("Push reminder sent", ['reminder_id' => $reminder->id]);
@@ -118,7 +129,7 @@ class ReminderDispatcher
         int $hoursBefore
     ): void {
         $patient->notify(
-            new AppointmentReminderNotification($appointment, $hoursBefore)
+            new AppointmentReminderNotification($appointment, $hoursBefore, 'in_app')
         );
 
         Log::info("In-app reminder created", ['reminder_id' => $reminder->id]);

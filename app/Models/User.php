@@ -5,8 +5,10 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{HasOne, HasMany, BelongsToMany, BelongsTo};
+use App\Notifications\Contracts\RoutesAppointmentMail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -313,5 +315,31 @@ class User extends Authenticatable
         return $this->hasMany(PatientAttachment::class)
             ->where('is_xray', true)
             ->where('scan_status', 'completed');
+    }
+
+    /**
+     * Where to email this user for a given notification.
+     *
+     * MailMessage has no ->to(); MailChannel resolves the recipient only from
+     * here. Appointment notifications implement RoutesAppointmentMail so a
+     * booking made for a spouse or child reaches the person attending rather
+     * than the account holder.
+     *
+     * Returning an empty array makes MailChannel skip the send instead of
+     * throwing.
+     *
+     * @return array<string, string>|string
+     */
+    public function routeNotificationForMail(Notification $notification): array|string
+    {
+        if ($notification instanceof RoutesAppointmentMail) {
+            $recipient = $notification->appointmentMailRecipient($this);
+
+            if ($recipient !== []) {
+                return $recipient;
+            }
+        }
+
+        return [$this->email => (string) $this->name];
     }
 }

@@ -3,15 +3,17 @@
 namespace App\Notifications;
 
 use App\Models\Appointment;
-use Carbon\Carbon;
+use App\Notifications\Concerns\NotifiesAppointmentPatient;
+use App\Notifications\Contracts\RoutesAppointmentMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class AppointmentRescheduledNotification extends Notification implements ShouldQueue
+class AppointmentRescheduledNotification extends Notification implements ShouldQueue, RoutesAppointmentMail
 {
-    use Queueable;
+    use Queueable, SerializesModels, NotifiesAppointmentPatient;
 
     public function __construct(
         public readonly Appointment $appointment,
@@ -19,13 +21,12 @@ class AppointmentRescheduledNotification extends Notification implements ShouldQ
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->patientChannels($notifiable);
     }
 
     public function toDatabase(object $notifiable): array
     {
-        $when = Carbon::parse($this->appointment->start_time)
-            ->format('l, F j, Y \a\t g:i A');
+        $when = $this->appointment->start_time?->format('l, F j, Y \a\t g:i A');
 
         return [
             'title'          => 'Appointment Rescheduled',
@@ -40,17 +41,8 @@ class AppointmentRescheduledNotification extends Notification implements ShouldQ
 
     public function toMail(object $notifiable): MailMessage
     {
-        $newTime = Carbon::parse($this->appointment->start_time)
-            ->format('l, F j, Y \a\t g:i A');
-
         return (new MailMessage)
-            ->subject('Your Appointment Has Been Rescheduled')
-            ->greeting("Hello {$notifiable->name},")
-            ->line('Your appointment has been rescheduled.')
-            ->line("**New Schedule:** {$newTime}")
-            ->line("**Doctor:** " . ($this->appointment->doctor?->user?->name ?? 'N/A'))
-            ->line("**Branch:** " . ($this->appointment->branch?->name ?? 'N/A'))
-            ->action('View Appointment', url("/appointments/{$this->appointment->id}"))
-            ->line('If you did not request this change, please contact us immediately.');
+            ->subject('Your appointment has been rescheduled')
+            ->markdown('emails.appointments.rescheduled', $this->appointmentMailData());
     }
 }

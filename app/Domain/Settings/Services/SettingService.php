@@ -10,12 +10,29 @@ class SettingService
 {
     /**
      * Load ALL settings once, cache indefinitely.
+     *
+     * Only raw attribute arrays go into the cache, never Setting models.
+     * config/cache.php sets 'serializable_classes' => false (Laravel 13's
+     * default hardening against gadget chains), so any object round-tripped
+     * through the cache comes back as __PHP_Incomplete_Class. Caching
+     * primitives and re-hydrating keeps that protection switched on.
      */
     public function all(): Collection
     {
-        return Cache::rememberForever(Setting::CACHE_KEY, function () {
-            return Setting::all()->keyBy('key');
-        });
+        $rows = Cache::rememberForever(
+            Setting::CACHE_KEY,
+            fn() => Setting::all()->map->getAttributes()->all()
+        );
+
+        // A cache entry written before this fix holds serialized models.
+        // Drop it and rebuild rather than handing hydrate() garbage.
+        if (!is_array($rows)) {
+            Cache::forget(Setting::CACHE_KEY);
+            $rows = Setting::all()->map->getAttributes()->all();
+            Cache::forever(Setting::CACHE_KEY, $rows);
+        }
+
+        return Setting::hydrate($rows)->keyBy('key');
     }
 
     /**

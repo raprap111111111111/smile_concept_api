@@ -122,6 +122,48 @@ class Appointment extends Model
         return $this->invoice()->exists();
     }
 
+    /**
+     * Where notifications about this appointment should be emailed.
+     *
+     * patient_email wins when it is set, because an account holder can book on
+     * behalf of a spouse or child -- that person is the one attending, so they
+     * are the one who needs the reminder. Falls back to the account holder.
+     *
+     * The format check is not decoration: patient_email is a nullable free-text
+     * column filled straight from the booking form. Handing Symfony a malformed
+     * address throws RfcComplianceException inside the queue worker, which
+     * fails the whole job and loses the bell notification too. Degrading to the
+     * account email keeps the patient informed.
+     */
+    public function notificationEmail(): ?string
+    {
+        foreach ([$this->patient_email, $this->user?->email] as $candidate) {
+            $candidate = trim((string) $candidate);
+
+            if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Who to greet in those notifications. Mirrors notificationEmail().
+     */
+    public function notificationName(): string
+    {
+        foreach ([$this->patient_name, $this->user?->name] as $candidate) {
+            $candidate = trim((string) $candidate);
+
+            if ($candidate !== '') {
+                return $candidate;
+            }
+        }
+
+        return 'Patient';
+    }
+
     // ═══════════════════════════════════════════════════════
     // ✅ SCOPES
     // ═══════════════════════════════════════════════════════
