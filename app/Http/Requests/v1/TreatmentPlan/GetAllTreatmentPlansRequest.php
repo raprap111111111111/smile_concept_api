@@ -8,35 +8,48 @@ use Illuminate\Validation\Rule;
 
 class GetAllTreatmentPlansRequest extends FormRequest
 {
-    private const DEFAULT_ORDER_BY = 'created_at';
+    private const DEFAULT_ORDER_BY  = 'created_at';
     private const DEFAULT_ORDER_DIR = 'desc';
-    private const DEFAULT_LIMIT = 15;
-    private const MAX_LIMIT = 100;
+    private const DEFAULT_LIMIT     = 15;
+    private const MAX_LIMIT         = 100;
 
     public function authorize(): bool
     {
-        return $this->user()->can('treatment-plan.viewAny');
+        // Staff (viewAny) can see all plans.
+        // Patients (view only) can see their own — scoped in controller.
+        return $this->user()->can('treatment-plan.viewAny')
+            || $this->user()->can('treatment-plan.view');
+    }
+
+    /**
+     * True when the user can only see their own plans.
+     * Used by the controller to scope the query by patient_id.
+     */
+    public function isOwnOnly(): bool
+    {
+        return ! $this->user()->can('treatment-plan.viewAny')
+            && $this->user()->can('treatment-plan.view');
     }
 
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'order_by' => $this->getValidOrderBy(),
+            'order_by'  => $this->getValidOrderBy(),
             'order_dir' => $this->getValidOrderDir(),
-            'limit' => $this->getValidLimit(),
+            'limit'     => $this->getValidLimit(),
         ]);
     }
 
     public function rules(): array
     {
         return [
-            'search' => ['nullable', 'string', 'min:1', 'max:100'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'search'    => ['nullable', 'string', 'min:1', 'max:100'],
+            'user_id'   => ['nullable', 'integer', 'exists:users,id'],
             'doctor_id' => ['nullable', 'integer', 'exists:doctors,id'],
-            'status' => ['nullable', 'string', Rule::enum(TreatmentPlanStatus::class)],
-            'offset' => ['nullable', 'integer', 'min:0'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
-            'order_by' => ['nullable', Rule::in($this->getValidColumns())],
+            'status'    => ['nullable', 'string', Rule::enum(TreatmentPlanStatus::class)],
+            'offset'    => ['nullable', 'integer', 'min:0'],
+            'limit'     => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
+            'order_by'  => ['nullable', Rule::in($this->getValidColumns())],
             'order_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ];
     }
