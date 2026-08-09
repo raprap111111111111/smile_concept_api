@@ -39,12 +39,22 @@ class UpdateAppointmentAction
             // ─── 1. Handle status change separately ──────────
             // Status transitions have their own rules & notifications
             // Delegate to UpdateAppointmentStatusAction
+            $statusEmailedPatient = false;
+
             if ($dto->status !== null && $dto->status !== $appointment->status) {
                 $this->statusAction->execute(
                     $appointment,
                     $dto->status,
                     $dto->cancellationReason,
                 );
+
+                // Only these two transitions actually notify the patient.
+                // COMPLETED and PENDING send nothing, so a reschedule in the
+                // same request still needs its own email.
+                $statusEmailedPatient = in_array($dto->status, [
+                    AppointmentStatus::CONFIRMED,
+                    AppointmentStatus::CANCELLED,
+                ], true);
             }
 
             // ─── 2. Check time conflict if time changed ───────
@@ -103,7 +113,14 @@ class UpdateAppointmentAction
                 $this->reminderRepository->cancelPendingForAppointment($updated->id);
                 $this->scheduleReminder->execute($updated);
 
-                $this->sendRescheduleAlerts($updated);
+                // A single PATCH can both confirm and move an appointment.
+                // Skip the second email in that case: the notifications are
+                // queued with SerializesModels, so the confirmation is
+                // re-hydrated after this transaction commits and already shows
+                // the new time.
+                if (!$statusEmailedPatient) {
+                    $this->sendRescheduleAlerts($updated);
+                }
             }
 
             $updated->load(['user', 'doctor.user', 'branch']);

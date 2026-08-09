@@ -77,14 +77,14 @@ class UpdateAppointmentStatusAction
         // ─── 7. Reload fresh relations ───────────────────────
         $appointment = $appointment->fresh(['user', 'doctor.user', 'branch']);
 
-        // ─── 8. Dispatch notifications ───────────────────────
-        $this->dispatchNotifications($appointment, $previousStatus, $newStatus, $cancellationReason);
-
-        // ─── 9. Broadcast to connected clients ───────────────
+        // ─── 8. Notify + broadcast ───────────────────────────
         // validateTransition() treats same-status as a no-op and returns rather
         // than throwing, so execute() still runs to completion on a redundant
-        // PATCH. Guarding here keeps those off the wire.
+        // PATCH. Notifications belong inside this guard too: without it, every
+        // repeated PATCH .../status re-emails the patient.
         if ($previousStatus !== $newStatus) {
+            $this->dispatchNotifications($appointment, $previousStatus, $newStatus, $cancellationReason);
+
             AppointmentStatusChanged::dispatch($appointment, $previousStatus->value);
 
             DashboardCountersStale::dispatch(
@@ -115,7 +115,7 @@ class UpdateAppointmentStatusAction
         match ($to) {
 
             AppointmentStatus::CONFIRMED => $patient?->notify(
-                new AppointmentBookedNotification($appointment)
+                new AppointmentBookedNotification($appointment, confirmed: true)
             ),
 
             AppointmentStatus::CANCELLED => $this->notifyCancellation(

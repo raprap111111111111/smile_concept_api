@@ -115,4 +115,28 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | The "theme" is resolved as a view name first, so 'smile' loads
+    | resources/views/mail/smile.blade.php -- a Blade file, which means it can
+    | read clinic branding out of the settings table. That file is the single
+    | place to edit the look of every outgoing email.
+    |
+    | "paths" is what makes the published components in
+    | resources/views/vendor/mail override Laravel's built-in ones. Without
+    | this key, publishing those views does nothing at all.
+    |
+    */
+
+    'markdown' => [
+        'theme' => env('MAIL_THEME', 'smile'),
+
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];

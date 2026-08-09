@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | Root of the Flutter client. Emails link back here, not to APP_URL -- this
+    | API serves no patient-facing pages. Leave it empty and emails omit their
+    | call-to-action button entirely rather than shipping a dead link.
+    |
+    */
+
+    'frontend_url' => env('APP_FRONTEND_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
