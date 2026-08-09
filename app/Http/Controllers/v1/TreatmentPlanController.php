@@ -32,8 +32,16 @@ class TreatmentPlanController extends Controller
 
     public function index(GetAllTreatmentPlansRequest $request): JsonResponse
     {
-        $result = $this->repository->paginate($request->validated(), TreatmentPlanResource::class);
-        return $this->successResponse($result, 'Dental treatment plans estimate log retrieved.');
+        $params = $request->validated();
+
+        // Patient (view only) → scope to their own plans
+        if ($request->isOwnOnly()) {
+            $params['user_id'] = $request->user()->id;
+        }
+
+        $result = $this->repository->paginate($params, TreatmentPlanResource::class);
+
+        return $this->successResponse($result, 'Treatment plans retrieved.');
     }
 
     public function show(GetTreatmentPlanRequest $request, TreatmentPlan $treatmentPlan): JsonResponse
@@ -85,8 +93,8 @@ class TreatmentPlanController extends Controller
     }
 
     public function changeStatus(
-        ChangeTreatmentPlanStatusRequest $request,  
-        TreatmentPlan $treatmentPlan
+        ChangeTreatmentPlanStatusRequest $request,
+        TreatmentPlan $treatmentPlan,
     ): JsonResponse {
         try {
             $updated = $this->changeStatusAction->execute(
