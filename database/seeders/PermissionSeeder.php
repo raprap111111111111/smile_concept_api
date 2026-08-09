@@ -21,9 +21,9 @@ class PermissionSeeder extends Seeder
             // 📊 PHASE 0: DASHBOARD & SETTINGS
             // ═══════════════════════════════════════════
             'dashboard'        => ['view'],
-            'setting'          => ['view', 'update'],  
-            'activity-log'     => ['viewAny', 'view', 'export'],   
-            'notification'     => ['viewAny', 'view', 'create', 'update', 'delete'], 
+            'setting'          => ['view', 'update'],
+            'activity-log'     => ['viewAny', 'view', 'export'],
+            'notification'     => ['viewAny', 'view', 'create', 'update', 'delete'],
 
             // ═══════════════════════════════════════════
             // 🔐 PHASE 1: SECURITY & IDENTITY
@@ -85,8 +85,9 @@ class PermissionSeeder extends Seeder
                 'mark-completed',
                 'reopen',
                 'change-status',
+                'viewOwn'
             ]),
-            'prescription'     => array_merge($crud, ['print', 'send']),
+            'prescription'     => array_merge($crud, ['print', 'send', 'viewOwn']),
             'attachment'       => array_merge($crud, ['download', 'upload']),
             'consent-form'     => array_merge($crud, [
                 'send',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\v1\Prescription;
 
+use App\Models\Prescription;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,43 +15,50 @@ class GetAllPrescriptionsRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()->can('prescription.viewAny');
+        // Runs PrescriptionPolicy::viewAny → staff OR patient
+        return $this->user()->can('viewAny', Prescription::class);
     }
 
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'order_by' => $this->getValidOrderBy(),
+            'order_by'  => $this->getValidOrderBy(),
             'order_dir' => $this->getValidOrderDir(),
-            'limit' => $this->getValidLimit(),
+            'limit'     => $this->getValidLimit(),
         ]);
     }
 
     public function rules(): array
     {
-        return [
-            'search' => ['nullable', 'string', 'min:1', 'max:100'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'doctor_id' => ['nullable', 'integer', 'exists:doctors,id'],
-            'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
-            'offset' => ['nullable', 'integer', 'min:0'],
-            'limit' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
-            'order_by' => ['nullable', Rule::in($this->getValidColumns())],
-            'order_dir' => ['nullable', Rule::in(['asc', 'desc'])],
+        $rules = [
+            'search'         => ['nullable', 'string', 'min:1', 'max:100'],
+            'offset'         => ['nullable', 'integer', 'min:0'],
+            'limit'          => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
+            'order_by'       => ['nullable', Rule::in($this->getValidColumns())],
+            'order_dir'      => ['nullable', Rule::in(['asc', 'desc'])],
         ];
+
+        // Only staff can filter by these fields
+        if ($this->user()->can('prescription.viewAny')) {
+            $rules['user_id']        = ['nullable', 'integer', 'exists:users,id'];
+            $rules['doctor_id']      = ['nullable', 'integer', 'exists:doctors,id'];
+            $rules['appointment_id'] = ['nullable', 'integer', 'exists:appointments,id'];
+        }
+
+        return $rules;
     }
 
     protected function getValidOrderBy(): string
     {
-        return in_array($this->input('order_by'), $this->getValidColumns())
+        return in_array($this->input('order_by'), $this->getValidColumns(), true)
             ? $this->input('order_by')
             : self::DEFAULT_ORDER_BY;
     }
 
     protected function getValidOrderDir(): string
     {
-        return in_array(strtolower($this->input('order_dir')), ['asc', 'desc'])
-            ? strtolower($this->input('order_dir'))
+        return in_array(strtolower((string) $this->input('order_dir')), ['asc', 'desc'], true)
+            ? strtolower((string) $this->input('order_dir'))
             : self::DEFAULT_ORDER_DIR;
     }
 

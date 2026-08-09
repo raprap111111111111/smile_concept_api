@@ -28,8 +28,15 @@ class PrescriptionController extends Controller
 
     public function index(GetAllPrescriptionsRequest $request): JsonResponse
     {
-        $result = $this->repository->paginate($request->validated(), PrescriptionResource::class);
-        return $this->successResponse($result, 'Patient medical prescriptions index retrieved.');
+        $result = $this->repository->paginate(
+            $request->validated(),
+            PrescriptionResource::class,
+        );
+
+        return $this->successResponse(
+            $result,
+            'Patient medical prescriptions index retrieved.'
+        );
     }
 
     public function show(GetPrescriptionRequest $request, Prescription $prescription): JsonResponse

@@ -32,14 +32,11 @@ class TreatmentPlanController extends Controller
 
     public function index(GetAllTreatmentPlansRequest $request): JsonResponse
     {
-        $params = $request->validated();
-
-        // Patient (view only) → scope to their own plans
-        if ($request->isOwnOnly()) {
-            $params['user_id'] = $request->user()->id;
-        }
-
-        $result = $this->repository->paginate($params, TreatmentPlanResource::class);
+        // Repository handles patient scoping automatically
+        $result = $this->repository->paginate(
+            $request->validated(),
+            TreatmentPlanResource::class,
+        );
 
         return $this->successResponse($result, 'Treatment plans retrieved.');
     }

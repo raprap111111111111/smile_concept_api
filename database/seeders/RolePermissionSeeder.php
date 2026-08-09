@@ -333,8 +333,9 @@ class RolePermissionSeeder extends Seeder
                 // Own clinical records (read-only)
                 'dental-chart'     => ['view'],
                 'treatment'        => ['view'],
-                'treatment-plan'   => ['view', 'accept', 'reject'],
-                'prescription'     => ['view'],
+                'treatment-plan'   => ['view', 'accept', 'reject', 'viewOwn'],
+                // RoleSeeder — patient role
+                'prescription'     => ['viewOwn'],
 
                 // Browse clinic directory — needed to choose a dentist and
                 // branch when booking. Not patient data, so listing is safe.
