@@ -4,6 +4,7 @@ namespace App\Domain\TreatmentPlans\Repositories;
 
 use App\Models\TreatmentPlan;
 use App\Support\Query\BaseRepository;
+use Illuminate\Support\Facades\Auth;
 
 class TreatmentPlanRepository extends BaseRepository
 {
@@ -13,6 +14,19 @@ class TreatmentPlanRepository extends BaseRepository
     protected array $sortable = ['id', 'total_estimated_amount', 'created_at'];
     protected string $defaultOrderBy = 'created_at';
     protected string $defaultOrderDirection = 'desc';
+
+    public function paginate(array $params = [], ?string $resourceClass = null): array
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        if ($user && ! $user->can('treatment-plan.viewAny')) {
+            $params['user_id'] = $user->id;
+            unset($params['doctor_id']);
+        }
+
+        return parent::paginate($params, $resourceClass);
+    }
 
     /**
      * Retrieve all treatment plans

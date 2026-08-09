@@ -15,20 +15,8 @@ class GetAllTreatmentPlansRequest extends FormRequest
 
     public function authorize(): bool
     {
-        // Staff (viewAny) can see all plans.
-        // Patients (view only) can see their own — scoped in controller.
         return $this->user()->can('treatment-plan.viewAny')
-            || $this->user()->can('treatment-plan.view');
-    }
-
-    /**
-     * True when the user can only see their own plans.
-     * Used by the controller to scope the query by patient_id.
-     */
-    public function isOwnOnly(): bool
-    {
-        return ! $this->user()->can('treatment-plan.viewAny')
-            && $this->user()->can('treatment-plan.view');
+            || $this->user()->can('treatment-plan.viewOwn');
     }
 
     protected function prepareForValidation(): void
@@ -42,16 +30,22 @@ class GetAllTreatmentPlansRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'search'    => ['nullable', 'string', 'min:1', 'max:100'],
-            'user_id'   => ['nullable', 'integer', 'exists:users,id'],
-            'doctor_id' => ['nullable', 'integer', 'exists:doctors,id'],
             'status'    => ['nullable', 'string', Rule::enum(TreatmentPlanStatus::class)],
             'offset'    => ['nullable', 'integer', 'min:0'],
             'limit'     => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
             'order_by'  => ['nullable', Rule::in($this->getValidColumns())],
             'order_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ];
+
+        // Only staff can filter by these
+        if ($this->user()->can('treatment-plan.viewAny')) {
+            $rules['user_id']   = ['nullable', 'integer', 'exists:users,id'];
+            $rules['doctor_id'] = ['nullable', 'integer', 'exists:doctors,id'];
+        }
+
+        return $rules;
     }
 
     protected function getValidOrderBy(): string
