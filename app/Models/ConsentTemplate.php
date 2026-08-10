@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ConsentTemplate extends Model
 {
-    use HasFactory,  LogsActivity;
+    use HasFactory;
 
     protected $fillable = [
         'title',
@@ -21,7 +20,7 @@ class ConsentTemplate extends Model
         'is_active' => 'boolean',
     ];
 
-    public function patientConsents(): HasMany
+    public function signedConsents(): HasMany
     {
         return $this->hasMany(PatientConsent::class);
     }
