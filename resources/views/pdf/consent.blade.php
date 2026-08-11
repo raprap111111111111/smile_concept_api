@@ -4,32 +4,48 @@
     <meta charset="utf-8">
     <title>Patient Clinical Packet - {{ $patient->name }}</title>
     <style>
-        @page { margin: 12mm; }
+        @page {
+            margin: 8mm;
+            size: A4 landscape;
+        }
+        * { box-sizing: border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 9px;
+            font-size: 8px;
             color: #000;
-            line-height: 1.25;
+            line-height: 1.2;
+            margin: 0;
         }
-        .page-break { page-break-after: always; }
 
-        /* Two-column spread */
-        .spread { display: table; width: 100%; table-layout: fixed; }
-        .col { display: table-cell; vertical-align: top; padding: 0 8px; }
-        .col-left { width: 50%; border-right: 1.5px solid #000; }
+        /* Two-column spread — NO fixed height, let content flow naturally */
+        .spread {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            page-break-inside: avoid;
+            page-break-after: always;
+        }
+        .spread:last-child { page-break-after: auto; }
+
+        .col {
+            display: table-cell;
+            vertical-align: top;
+            padding: 0 6px;
+        }
+        .col-left  { width: 50%; border-right: 1.5px solid #000; }
         .col-right { width: 50%; }
 
         /* Titles */
         .form-title {
             text-align: center;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 11px;
             border: 2px double #000;
-            padding: 3px 15px;
+            padding: 2px 12px;
             display: inline-block;
             letter-spacing: 1px;
         }
-        .title-wrap { text-align: center; margin: 4px 0 8px; }
+        .title-wrap { text-align: center; margin: 3px 0 5px; }
 
         /* Fields */
         .field-line {
@@ -38,33 +54,33 @@
             min-width: 100px;
             padding: 0 3px;
         }
-        .field-row { margin: 4px 0; }
         h3.section-header {
-            font-size: 11px;
+            font-size: 9.5px;
             font-weight: bold;
-            margin: 8px 0 4px;
+            margin: 5px 0 3px;
             text-transform: uppercase;
         }
 
-        /* Tables */
+        /* Info tables */
         table.info-table { width: 100%; border-collapse: collapse; }
-        table.info-table td { padding: 2px 3px; vertical-align: bottom; font-size: 9px; }
+        table.info-table td { padding: 1px 3px; vertical-align: bottom; font-size: 8px; }
 
-        table.tx-table { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+        /* Treatment table */
+        table.tx-table { width: 100%; border-collapse: collapse; font-size: 7.5px; }
         table.tx-table th, table.tx-table td {
             border: 1px solid #000;
-            padding: 2px 3px;
+            padding: 1px 3px;
+            height: 13px;
         }
-        table.tx-table th { background: #eee; font-weight: bold; }
+        table.tx-table th { background: #eee; font-weight: bold; height: 15px; }
 
-        /* Consent body */
-        .consent-body { text-align: justify; }
-        .consent-body p { margin: 5px 0; }
-        .consent-body strong { text-transform: uppercase; }
+        /* Consent */
+        .consent-body { text-align: justify; font-size: 8.5px; line-height: 1.35; }
+        .consent-body p { margin: 4px 0; }
 
-        /* Signature */
+        /* Signatures */
         .signature-block {
-            margin-top: 20px;
+            margin-top: 12px;
             display: table;
             width: 100%;
         }
@@ -72,75 +88,74 @@
             display: table-cell;
             text-align: center;
             width: 33%;
-            padding: 0 8px;
+            padding: 0 6px;
         }
         .signature-line {
             border-top: 1px solid #000;
-            margin-top: 50px;
+            margin-top: 35px;
             padding-top: 2px;
-            font-size: 8px;
+            font-size: 7.5px;
         }
-        .signature-img {
-            max-height: 50px;
-            max-width: 180px;
-        }
+        .signature-img { max-height: 38px; max-width: 140px; }
 
-        /* Dental Chart */
+        /* Dental Chart — compact */
         .tooth-grid {
             width: 100%;
             border-collapse: collapse;
-            margin: 3px 0;
+            margin: 1px 0;
         }
         .tooth-grid td {
             border: 1px solid #000;
             width: 6.25%;
-            height: 26px;
+            height: 20px;
             text-align: center;
-            font-size: 8px;
+            font-size: 7.5px;
         }
-        .tooth-number {
-            border: none !important;
-            font-size: 7px;
-            height: 10px !important;
-        }
-        .tooth-symbol {
-            font-size: 14px;
-        }
-        .status-label {
-            font-size: 8px;
-            font-weight: bold;
-            margin: 3px 0;
-        }
-        .status-label .right { float: left; }
-        .status-label .left  { float: right; }
+        .tooth-number { border: none !important; font-size: 6.5px; height: 9px !important; }
+        .tooth-symbol { font-size: 11px; }
         .teeth-label {
             text-align: center;
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
-            margin: 3px 0;
+            margin: 1px 0 4px;
         }
+        .status-label { font-size: 7px; font-weight: bold; margin: 2px 0; overflow: hidden; }
+        .status-label .right { float: left; }
+        .status-label .left  { float: right; }
 
         /* Legend */
         .legend {
-            margin-top: 8px;
-            font-size: 8px;
+            margin-top: 5px;
+            font-size: 6.5px;
             border-top: 1px solid #999;
-            padding-top: 5px;
+            padding-top: 3px;
         }
-        .legend .legend-group { margin-bottom: 4px; }
-        .legend strong { display: block; margin-bottom: 2px; }
+        .legend table { width: 100%; }
+        .legend strong { display: block; margin-bottom: 2px; font-size: 7.5px; }
 
-        /* Yes/No boxes */
         .yn { font-family: DejaVu Sans; }
+
         .voided-banner {
             background: #ffe5e5;
             color: #a00;
-            padding: 4px;
+            padding: 3px;
             text-align: center;
             font-weight: bold;
-            margin: 6px 0;
+            margin: 3px 0;
             border: 1px solid #a00;
-            font-size: 10px;
+            font-size: 8.5px;
+        }
+
+        .footer-meta {
+            position: fixed;
+            bottom: 2mm;
+            left: 8mm;
+            right: 8mm;
+            font-size: 6px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 2px;
+            text-align: center;
         }
     </style>
 </head>
@@ -153,26 +168,24 @@
     </div>
 @endif
 
-{{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- PAGE 1: TREATMENT RECORD + PATIENT INFO / MEDICAL HISTORY      --}}
-{{-- ═══════════════════════════════════════════════════════════════ --}}
+{{-- ═══════════ PAGE 1: TREATMENT + PATIENT INFO ═══════════ --}}
 <div class="spread">
 
     {{-- LEFT: Treatment Record --}}
     <div class="col col-left">
-        <table class="info-table" style="margin-bottom: 6px;">
+        <table class="info-table" style="margin-bottom: 4px;">
             <tr>
                 <td>
                     <strong>Name:</strong>
-                    <span class="field-line" style="min-width:180px">{{ $patient->name }}</span>
+                    <span class="field-line" style="min-width:140px">{{ $patient->name }}</span>
                 </td>
                 <td>
                     <strong>Age:</strong>
-                    <span class="field-line" style="min-width:35px">{{ $patient->age ?? '' }}</span>
+                    <span class="field-line" style="min-width:30px">{{ $patient->age ?? '' }}</span>
                 </td>
                 <td>
                     <strong>Gender:</strong>
-                    <span class="field-line" style="min-width:35px">{{ $patient->gender ?? '' }}</span>
+                    <span class="field-line" style="min-width:30px">{{ $patient->gender ?? '' }}</span>
                 </td>
             </tr>
         </table>
@@ -187,14 +200,14 @@
                     <th style="width:12%">Date</th>
                     <th style="width:10%">Tooth No./s</th>
                     <th style="width:38%">Procedure</th>
-                    <th style="width:13%">Amount Charged</th>
-                    <th style="width:13%">Amount Paid</th>
+                    <th style="width:13%">Amt. Charged</th>
+                    <th style="width:13%">Amt. Paid</th>
                     <th style="width:14%">Balance</th>
                 </tr>
             </thead>
             <tbody>
                 @php $rowCount = 0; @endphp
-                @forelse($treatments as $tx)
+                @foreach($treatments as $tx)
                     <tr>
                         <td>{{ $tx->date }}</td>
                         <td>{{ $tx->tooth_no }}</td>
@@ -204,13 +217,12 @@
                         <td style="text-align:right;">{{ number_format($tx->balance, 2) }}</td>
                     </tr>
                     @php $rowCount++; @endphp
-                @empty
-                @endforelse
+                @endforeach
 
-                {{-- Fill empty rows to look like paper form (total 30 rows) --}}
-                @for($i = $rowCount; $i < 30; $i++)
+                {{-- 🔥 Reduced to 22 rows — fits page without overflow --}}
+                @for($i = $rowCount; $i < 22; $i++)
                     <tr>
-                        <td style="height:16px;">&nbsp;</td>
+                        <td>&nbsp;</td>
                         <td>&nbsp;</td>
                         <td>&nbsp;</td>
                         <td>&nbsp;</td>
@@ -222,11 +234,11 @@
         </table>
     </div>
 
-    {{-- RIGHT: Patient Information Record + Medical History --}}
+    {{-- RIGHT: Patient Info + Medical History --}}
     <div class="col col-right">
-        <div style="text-align:center; margin-bottom:6px;">
-            <strong style="font-size:12px;">PHILIPPINE DENTAL ASSOCIATION</strong><br>
-            <div class="form-title" style="font-size:11px; margin-top:2px;">DENTAL CHART</div>
+        <div style="text-align:center; margin-bottom:4px;">
+            <strong style="font-size:10px;">PHILIPPINE DENTAL ASSOCIATION</strong><br>
+            <div class="form-title" style="font-size:9.5px; margin-top:2px;">DENTAL CHART</div>
         </div>
 
         <h3 class="section-header">Patient Information Record</h3>
@@ -235,49 +247,49 @@
             <tr>
                 <td colspan="3">
                     <strong>Name:</strong>
-                    <span class="field-line" style="min-width:340px">{{ $patient->name }}</span>
+                    <span class="field-line" style="min-width:280px">{{ $patient->name }}</span>
                 </td>
             </tr>
             <tr>
                 <td>
                     <strong>Birthdate:</strong>
-                    <span class="field-line" style="min-width:90px">{{ $patient->birthdate ?? '' }}</span>
+                    <span class="field-line" style="min-width:75px">{{ $patient->birthdate ?? '' }}</span>
                 </td>
                 <td>
                     <strong>Age:</strong>
-                    <span class="field-line" style="min-width:35px">{{ $patient->age ?? '' }}</span>
+                    <span class="field-line" style="min-width:30px">{{ $patient->age ?? '' }}</span>
                 </td>
                 <td>
                     <strong>Sex:</strong>
-                    <span class="field-line" style="min-width:35px">{{ $patient->gender ?? '' }}</span>
+                    <span class="field-line" style="min-width:30px">{{ $patient->gender ?? '' }}</span>
                 </td>
             </tr>
             <tr>
                 <td colspan="3">
-                    <strong>Home Address:</strong>
-                    <span class="field-line" style="min-width:300px">{{ $patient->address ?? '' }}</span>
+                    <strong>Address:</strong>
+                    <span class="field-line" style="min-width:260px">{{ $patient->address ?? '' }}</span>
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
                     <strong>Occupation:</strong>
-                    <span class="field-line" style="min-width:180px">{{ $patient->occupation ?? '' }}</span>
+                    <span class="field-line" style="min-width:150px">{{ $patient->occupation ?? '' }}</span>
                 </td>
                 <td>
                     <strong>Mobile:</strong>
-                    <span class="field-line" style="min-width:90px">{{ $patient->phone ?? '' }}</span>
+                    <span class="field-line" style="min-width:75px">{{ $patient->phone ?? '' }}</span>
                 </td>
             </tr>
             <tr>
                 <td colspan="3">
                     <strong>Email:</strong>
-                    <span class="field-line" style="min-width:290px">{{ $patient->email ?? '' }}</span>
+                    <span class="field-line" style="min-width:250px">{{ $patient->email ?? '' }}</span>
                 </td>
             </tr>
             <tr>
                 <td colspan="3">
                     <strong>Reason for consultation:</strong>
-                    <span class="field-line" style="min-width:260px">{{ $patient->consultation_reason ?? '' }}</span>
+                    <span class="field-line" style="min-width:200px">{{ $patient->consultation_reason ?? '' }}</span>
                 </td>
             </tr>
         </table>
@@ -287,23 +299,23 @@
         @if($medicalProfile)
             <table class="info-table">
                 <tr>
-                    <td><strong>Blood Type:</strong> <span class="field-line" style="min-width:60px">{{ $medicalProfile->blood_type ?? '' }}</span></td>
-                    <td><strong>Allergies:</strong> <span class="field-line" style="min-width:180px">{{ $medicalProfile->allergies ?? 'None' }}</span></td>
+                    <td><strong>Blood Type:</strong> <span class="field-line" style="min-width:50px">{{ $medicalProfile->blood_type ?? '' }}</span></td>
+                    <td><strong>Allergies:</strong> <span class="field-line" style="min-width:140px">{{ $medicalProfile->allergies ?? 'None' }}</span></td>
                 </tr>
                 <tr>
                     <td colspan="2">
                         <strong>Medical History:</strong>
-                        <div style="border:1px solid #000; padding:4px; min-height:40px; margin-top:2px;">
+                        <div style="border:1px solid #000; padding:3px; min-height:32px; margin-top:2px;">
                             {{ $medicalProfile->medical_history ?? 'None declared.' }}
                         </div>
                     </td>
                 </tr>
             </table>
 
-            <table class="info-table" style="margin-top:6px;">
+            <table class="info-table" style="margin-top:4px;">
                 <tr>
                     <td>1. Are you pregnant?</td>
-                    <td style="width:80px;">
+                    <td style="width:75px;">
                         {!! ($medicalProfile->is_pregnant ?? false) ? '<span class="yn">☑</span> Yes &nbsp; <span class="yn">☐</span> No' : '<span class="yn">☐</span> Yes &nbsp; <span class="yn">☑</span> No' !!}
                     </td>
                 </tr>
@@ -327,37 +339,39 @@
                 </tr>
             </table>
 
-            <div style="margin-top: 6px;">
+            <div style="margin-top: 5px;">
                 <strong>Emergency Contact:</strong>
-                <span class="field-line" style="min-width:150px">{{ $medicalProfile->emergency_contact_name ?? '' }}</span>
-                <span class="field-line" style="min-width:120px">{{ $medicalProfile->emergency_contact_phone ?? '' }}</span>
+                <span class="field-line" style="min-width:140px">{{ $medicalProfile->emergency_contact_name ?? '' }}</span>
+                <span class="field-line" style="min-width:100px">{{ $medicalProfile->emergency_contact_phone ?? '' }}</span>
             </div>
         @else
             <p style="font-style:italic; color:#666;">No medical profile on file.</p>
         @endif
 
-        <div style="margin-top: 15px; text-align:right;">
+        <div style="margin-top: 20px; text-align:right;">
             @if(str_starts_with($signature, 'data:image'))
                 <img src="{{ $signature }}" class="signature-img" alt="Signature">
             @endif
-            <div style="border-top:1px solid #000; width:200px; margin-left:auto; padding-top:2px; font-size:8px; text-align:center;">
-                Signature
+            <div style="border-top:1px solid #000; width:160px; margin-left:auto; padding-top:2px; font-size:7.5px; text-align:center;">
+                Patient Signature
             </div>
         </div>
     </div>
 </div>
 
-<div class="page-break"></div>
-
-{{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- PAGE 2: INFORMED CONSENT + DENTAL RECORD CHART (TEETH)         --}}
-{{-- ═══════════════════════════════════════════════════════════════ --}}
+{{-- ═══════════ PAGE 2: CONSENT + DENTAL CHART ═══════════ --}}
 <div class="spread">
 
     {{-- LEFT: Informed Consent --}}
     <div class="col col-left">
         <div class="title-wrap">
             <div class="form-title">INFORMED CONSENT</div>
+        </div>
+
+        <div style="margin-bottom: 6px; font-size: 8.5px;">
+            <strong>Patient:</strong> {{ $patient->name }}
+            &nbsp;&nbsp;
+            <strong>Date:</strong> {{ $consent->signed_at->format('F j, Y') }}
         </div>
 
         <div class="consent-body">
@@ -369,63 +383,48 @@
                 @if(str_starts_with($signature, 'data:image'))
                     <img src="{{ $signature }}" class="signature-img" alt="Patient Signature">
                 @endif
-                <div class="signature-line">Patient/Parent/Guardian Signature</div>
+                <div class="signature-line">Patient/Parent/Guardian</div>
             </div>
             <div class="signature-cell">
                 <div class="signature-line">
-                    {{ $consent->appointment?->doctor?->user?->name ?? '' }}
+                    {{ $consent->appointment?->doctor?->user?->name ?? $consent->signedByStaff?->name ?? '' }}
                     <br>Dentist / Signature
                 </div>
             </div>
             <div class="signature-cell">
-                <div style="margin-top: 50px; padding-top: 2px; border-top: 1px solid #000; font-size: 8px;">
+                <div style="margin-top: 35px; padding-top: 2px; border-top: 1px solid #000; font-size: 7.5px;">
                     {{ $consent->signed_at->format('F j, Y') }}
                 </div>
-                <div style="font-size:8px;">Date</div>
+                <div style="font-size:7.5px;">Date</div>
             </div>
         </div>
     </div>
 
-    {{-- RIGHT: Dental Record Chart (Teeth Diagram) --}}
+    {{-- RIGHT: Dental Chart --}}
     <div class="col col-right">
         <div class="title-wrap">
             <div class="form-title">DENTAL RECORD CHART</div>
         </div>
 
-        <div style="font-weight:bold; margin: 6px 0; font-size:10px;">
-            INTRAORAL EXAMINATION
-        </div>
+        <div style="font-weight:bold; margin: 3px 0; font-size:9px;">INTRAORAL EXAMINATION</div>
 
         <table class="info-table">
             <tr>
                 <td colspan="3">
                     <strong>Name:</strong>
-                    <span class="field-line" style="min-width:280px">{{ $patient->name }}</span>
+                    <span class="field-line" style="min-width:220px">{{ $patient->name }}</span>
                 </td>
             </tr>
             <tr>
-                <td>
-                    <strong>Age:</strong>
-                    <span class="field-line" style="min-width:35px">{{ $patient->age ?? '' }}</span>
-                </td>
-                <td>
-                    <strong>Gender:</strong>
-                    <span class="field-line" style="min-width:35px">{{ $patient->gender ?? '' }}</span>
-                </td>
-                <td>
-                    <strong>Date:</strong>
-                    <span class="field-line" style="min-width:80px">{{ $consent->signed_at->format('M d, Y') }}</span>
-                </td>
+                <td><strong>Age:</strong> <span class="field-line" style="min-width:30px">{{ $patient->age ?? '' }}</span></td>
+                <td><strong>Gender:</strong> <span class="field-line" style="min-width:30px">{{ $patient->gender ?? '' }}</span></td>
+                <td><strong>Date:</strong> <span class="field-line" style="min-width:70px">{{ $consent->signed_at->format('M d, Y') }}</span></td>
             </tr>
         </table>
 
-        {{-- Upper Temporary Teeth (55-65) --}}
-        <div class="status-label" style="margin-top:10px;">
-            <span class="right">STATUS</span>
-            <span class="left">LEFT</span>
-            <div style="clear:both;"></div>
+        <div class="status-label" style="margin-top:6px;">
             <span class="right">RIGHT</span>
-            <div style="clear:both;"></div>
+            <span class="left">LEFT</span>
         </div>
 
         <table class="tooth-grid">
@@ -440,10 +439,8 @@
                 @endforeach
             </tr>
         </table>
+        <div class="teeth-label">TEMPORARY TEETH (Upper)</div>
 
-        <div class="teeth-label">TEMPORARY TEETH</div>
-
-        {{-- Upper Permanent Teeth (18-28) --}}
         <table class="tooth-grid">
             <tr>
                 @foreach([18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28] as $tooth)
@@ -456,10 +453,8 @@
                 @endforeach
             </tr>
         </table>
+        <div class="teeth-label">PERMANENT TEETH (Upper)</div>
 
-        <div class="teeth-label">PERMANENT TEETH</div>
-
-        {{-- Lower Permanent Teeth (48-38) --}}
         <table class="tooth-grid">
             <tr>
                 @foreach([48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38] as $tooth)
@@ -472,8 +467,8 @@
                 @endforeach
             </tr>
         </table>
+        <div class="teeth-label">PERMANENT TEETH (Lower)</div>
 
-        {{-- Lower Temporary Teeth (85-75) --}}
         <table class="tooth-grid">
             <tr>
                 @foreach([85,84,83,82,81,71,72,73,74,75] as $tooth)
@@ -486,47 +481,31 @@
                 @endforeach
             </tr>
         </table>
+        <div class="teeth-label">TEMPORARY TEETH (Lower)</div>
 
-        <div class="teeth-label">TEMPORARY TEETH</div>
-
-        <div class="status-label" style="margin-top:4px;">
-            <span class="right">STATUS</span>
-            <span class="left">LEFT</span>
-            <div style="clear:both;"></div>
-            <span class="right">RIGHT</span>
-        </div>
-
-        {{-- Legend --}}
         <div class="legend">
-            <table style="width:100%; font-size:7.5px;">
+            <table>
                 <tr>
-                    <td style="vertical-align:top; width:35%;">
-                        <strong>Legend: Condition</strong>
-                        <div>D - Decayed (Caries)</div>
-                        <div>M - Missing due to Caries</div>
-                        <div>F - Filled</div>
-                        <div>I - Caries for Extraction</div>
-                        <div>RF - Root Fragment</div>
-                        <div>MO - Missing due to Other</div>
-                        <div>Im - Impacted Tooth</div>
+                    <td style="vertical-align:top; width:34%;">
+                        <strong>Condition</strong>
+                        <div>D-Decayed &nbsp; M-Missing</div>
+                        <div>F-Filled &nbsp; I-For Extraction</div>
+                        <div>RF-Root Fragment &nbsp; Im-Impacted</div>
+                        <div>MO-Missing (Other)</div>
                     </td>
-                    <td style="vertical-align:top; width:35%;">
-                        <strong>Restoration & Prosthetics</strong>
-                        <div>J - Jacket Crown</div>
-                        <div>A - Amalgam Filling</div>
-                        <div>AB - Abutment</div>
-                        <div>P - Pontic</div>
-                        <div>In - Inlay</div>
-                        <div>FX - Fixed Cure Composite</div>
-                        <div>Rm - Removable Denture</div>
+                    <td style="vertical-align:top; width:33%;">
+                        <strong>Restoration</strong>
+                        <div>J-Jacket &nbsp; A-Amalgam</div>
+                        <div>AB-Abutment &nbsp; P-Pontic</div>
+                        <div>In-Inlay &nbsp; FX-Fixed Composite</div>
+                        <div>Rm-Removable Denture</div>
                     </td>
-                    <td style="vertical-align:top; width:30%;">
+                    <td style="vertical-align:top; width:33%;">
                         <strong>Surgery</strong>
-                        <div>X - Extraction (Caries)</div>
-                        <div>XO - Extraction (Other)</div>
-                        <div>✓ - Present Teeth</div>
-                        <div>Cm - Congenitally Missing</div>
-                        <div>Sp - Supernumerary</div>
+                        <div>X-Extraction (Caries)</div>
+                        <div>XO-Extraction (Other)</div>
+                        <div>✓-Present &nbsp; Cm-Congenital</div>
+                        <div>Sp-Supernumerary</div>
                     </td>
                 </tr>
             </table>
@@ -534,8 +513,7 @@
     </div>
 </div>
 
-{{-- Footer meta --}}
-<div style="position:fixed; bottom:5mm; left:12mm; right:12mm; font-size:7px; color:#666; border-top:1px solid #ccc; padding-top:2px; text-align:center;">
+<div class="footer-meta">
     Document ID: #{{ $consent->id }} |
     Signed: {{ $consent->signed_at->format('M d, Y g:i A') }} |
     IP: {{ $consent->ip_address ?? 'N/A' }} |
