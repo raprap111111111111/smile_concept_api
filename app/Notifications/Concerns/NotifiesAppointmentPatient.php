@@ -32,18 +32,27 @@ trait NotifiesAppointmentPatient
      *
      * The bell always fires. Email is added only when all of these hold:
      *   - the notifiable is the patient (never an admin),
-     *   - the clinic has not switched email off in Settings,
+     *   - the clinic has not switched email off in Settings (email_enabled),
+     *   - this notification's own toggle, when it has one, is on
+     *     ($settingKey, e.g. send_booking_confirmation_email),
      *   - we actually have a usable address to send to.
+     *
+     * Gating happens here at the channel, never at the dispatch site: turning
+     * an email toggle off must not silence the bell or the admin feed.
      *
      * @return array<int, string>
      */
-    protected function patientChannels(object $notifiable, bool $wantsMail = true): array
-    {
+    protected function patientChannels(
+        object  $notifiable,
+        bool    $wantsMail = true,
+        ?string $settingKey = null,
+    ): array {
         $channels = ['database'];
 
         if ($wantsMail
             && $this->isAppointmentPatient($notifiable)
             && (bool) setting('email_enabled', true)
+            && ($settingKey === null || (bool) setting($settingKey, true))
             && $this->appointment->notificationEmail() !== null
         ) {
             $channels[] = 'mail';

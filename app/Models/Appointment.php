@@ -41,13 +41,15 @@ class Appointment extends Model
         'cancellation_reason',  // ✅ ADD
         'created_by',           // ✅ ADD
         'reminder_sent',
+        'followup_sent_at',
     ];
 
     protected $casts = [
-        'start_time'    => 'datetime',
-        'end_time'      => 'datetime',
-        'reminder_sent' => 'boolean',
-        'status'        => AppointmentStatus::class,
+        'start_time'        => 'datetime',
+        'end_time'          => 'datetime',
+        'reminder_sent'     => 'boolean',
+        'followup_sent_at'  => 'datetime',
+        'status'            => AppointmentStatus::class,
     ];
 
     // ═══════════════════════════════════════════════════════

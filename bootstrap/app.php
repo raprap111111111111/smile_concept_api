@@ -45,6 +45,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt('09:00')
             ->withoutOverlapping()
             ->runInBackground();
+
+        $schedule->command('appointments:send-followups')
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

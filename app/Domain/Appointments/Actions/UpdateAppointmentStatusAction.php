@@ -4,6 +4,7 @@ namespace App\Domain\Appointments\Actions;
 
 use App\Domain\ActivityLogs\Services\ActivityLogger;
 use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
+use App\Domain\Appointments\Services\BookingRuleService;
 use App\Enums\AppointmentStatus;
 use App\Events\Appointments\AppointmentStatusChanged;
 use App\Events\Dashboard\DashboardCountersStale;
@@ -20,6 +21,7 @@ class UpdateAppointmentStatusAction
     public function __construct(
         private readonly ActivityLogger                $logger,
         private readonly AppointmentReminderRepository $reminderRepository,
+        private readonly BookingRuleService            $bookingRules,
     ) {}
 
     /**
@@ -55,6 +57,14 @@ class UpdateAppointmentStatusAction
                     'Cancellation reason is required when cancelling an appointment.'
                 );
             }
+
+            // Cancellation cutoff (cancellation_window_hours) binds patients
+            // only; staff can always cancel on the patient's behalf.
+            $this->bookingRules->assertCanCancel(
+                $appointment,
+                auth()->user()?->isStaff() ?? false,
+            );
+
             $updateData['cancellation_reason'] = $cancellationReason;
         }
 

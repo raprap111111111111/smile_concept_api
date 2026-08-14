@@ -2,20 +2,20 @@
 
 namespace App\Domain\AppointmentReminders\Services;
 
+use App\Domain\Settings\DTOs\AppointmentSettings;
 use App\Models\Appointment;
 use Carbon\Carbon;
 
 class ReminderScheduler
 {
     /**
-     * Default reminder offsets (in hours before appointment).
+     * Offsets (hours before start) and channels come from the settings table:
+     * `reminder_offsets` = [first, second], `reminder_channels`. Defaults live
+     * in AppointmentSettings, so missing rows never break scheduling.
      */
-    private const OFFSETS = [24, 1];
-
-    /**
-     * Default channels to send reminders through.
-     */
-    private const CHANNELS = ['email', 'sms'];
+    public function __construct(
+        private readonly AppointmentSettings $settings,
+    ) {}
 
     /**
      * Compute scheduled reminder times for an appointment.
@@ -27,7 +27,7 @@ class ReminderScheduler
         $schedule = [];
         $start    = Carbon::parse($appointment->start_time);
 
-        foreach (self::OFFSETS as $hours) {
+        foreach ($this->settings->reminderOffsets as $hours) {
             $scheduledFor = $start->copy()->subHours($hours);
 
             // Skip reminders that would land in the past
@@ -35,7 +35,7 @@ class ReminderScheduler
                 continue;
             }
 
-            foreach (self::CHANNELS as $channel) {
+            foreach ($this->settings->reminderChannels as $channel) {
                 $schedule[] = [
                     'scheduled_for' => $scheduledFor->toDateTimeString(),
                     'channel'       => $channel,
