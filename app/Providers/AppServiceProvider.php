@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Domain\Auth\Repositories\UserRepository;
 use App\Domain\Auth\Repositories\UserRepositoryInterface;
+use App\Domain\Settings\DTOs\AppointmentSettings;
+use App\Domain\Settings\Services\SettingService;
 use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+
+        // Scoped (per request), not singleton: settings edits must be visible
+        // on the next request, and queue workers must re-read between jobs.
+        $this->app->scoped(
+            AppointmentSettings::class,
+            fn($app) => AppointmentSettings::make($app->make(SettingService::class)),
+        );
 
         // Reverb is excluded from package auto-discovery (composer.json
         // `extra.laravel.dont-discover`) and registered from here instead.

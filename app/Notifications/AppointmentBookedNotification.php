@@ -30,7 +30,10 @@ class AppointmentBookedNotification extends Notification implements ShouldQueue,
 
     public function via(object $notifiable): array
     {
-        return $this->patientChannels($notifiable);
+        return $this->patientChannels(
+            $notifiable,
+            settingKey: 'send_booking_confirmation_email',
+        );
     }
 
     public function toDatabase(object $notifiable): array

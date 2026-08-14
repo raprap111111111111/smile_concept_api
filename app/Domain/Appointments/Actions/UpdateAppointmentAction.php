@@ -8,6 +8,7 @@ use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
 use App\Domain\Appointments\DTOs\UpdateAppointmentDTO;
 use App\Domain\Appointments\Repositories\AppointmentRepository;
 use App\Domain\Appointments\Services\AppointmentService;
+use App\Domain\Appointments\Services\BookingRuleService;
 use App\Enums\AppointmentStatus;
 use App\Events\Appointments\AppointmentStatusChanged;
 use App\Events\Dashboard\DashboardCountersStale;
@@ -26,6 +27,7 @@ class UpdateAppointmentAction
     public function __construct(
         private readonly AppointmentRepository         $repository,
         private readonly AppointmentService            $appointmentService,
+        private readonly BookingRuleService            $bookingRules,
         private readonly ActivityLogger                $logger,
         private readonly UpdateAppointmentStatusAction $statusAction, // ✅ delegate status changes
         private readonly AppointmentReminderRepository $reminderRepository,
@@ -67,6 +69,16 @@ class UpdateAppointmentAction
                 $startTime = $dto->startTime ?? $appointment->start_time;
                 $endTime   = $dto->endTime   ?? $appointment->end_time;
                 $doctorId  = $dto->doctorId  ?? $appointment->doctor_id;
+
+                // Configurable rules first: working days, clinic hours, lunch
+                // for everyone; caps and windows for patients only.
+                $this->bookingRules->assertCanReschedule(
+                    $appointment,
+                    (int) $doctorId,
+                    (string) $startTime,
+                    (string) $endTime,
+                    auth()->user()?->isStaff() ?? false,
+                );
 
                 if ($this->repository->checkConflicts(
                     $doctorId,

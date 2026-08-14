@@ -2,6 +2,7 @@
 
 namespace App\Domain\Appointments\Repositories;
 
+use App\Domain\Settings\DTOs\AppointmentSettings;
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Support\Query\BaseRepository;
@@ -12,6 +13,10 @@ use App\Domain\Appointments\DTOs\CalendarCountsAppointmentDTO;
 
 class AppointmentRepository extends BaseRepository
 {
+    public function __construct(
+        private readonly AppointmentSettings $settings,
+    ) {}
+
     protected string $model = Appointment::class;
 
     protected array $searchable = [
@@ -250,23 +255,36 @@ class AppointmentRepository extends BaseRepository
         return $query->orderBy('start_time', 'desc')->get();
     }
 
+    /**
+     * Build the bookable slot grid for one doctor, branch, and date.
+     *
+     * Every configurable rule that shapes the grid comes from
+     * AppointmentSettings. Each blocked slot carries `unavailable_reason` —
+     * the setting key (or 'booked'/'past') that blocked it — so "why is this
+     * slot gone" is answerable from the API response alone.
+     */
     public function getAvailableSlots(int $doctorId, int $branchId, string $date): array
     {
         $carbonDate = Carbon::parse($date);
-        $dayOfWeek  = $carbonDate->dayOfWeek;
+
+        $empty = [
+            'date'      => $date,
+            'doctor_id' => $doctorId,
+            'branch_id' => $branchId,
+            'slots'     => [],
+        ];
+
+        if (!$this->settings->isWorkingDay($carbonDate)) {
+            return $empty;
+        }
 
         $schedules = DoctorSchedule::where('doctor_id', $doctorId)
             ->where('branch_id', $branchId)
-            ->where('day_of_week', $dayOfWeek)
+            ->where('day_of_week', $carbonDate->dayOfWeek)
             ->get();
 
         if ($schedules->isEmpty()) {
-            return [
-                'date'      => $date,
-                'doctor_id' => $doctorId,
-                'branch_id' => $branchId,
-                'slots'     => [],
-            ];
+            return $empty;
         }
 
         $appointments = Appointment::where('doctor_id', $doctorId)
@@ -275,34 +293,45 @@ class AppointmentRepository extends BaseRepository
             ->whereIn('status', ['pending', 'confirmed'])
             ->get(['start_time', 'end_time']);
 
-        $slots        = [];
-        $slotDuration = 30;
+        // Concurrency is clinic-wide: every doctor's bookings overlapping this
+        // date count against max_concurrent_appointments.
+        $clinicWide = Appointment::whereDate('start_time', $date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->get(['start_time', 'end_time']);
+
+        [$clinicOpen, $clinicClose] = $this->settings->clinicWindowFor($carbonDate);
+
+        $slotMinutes   = $this->settings->slotDurationMinutes;
+        $strideMinutes = $this->settings->slotStrideMinutes();
+        $earliest      = $this->settings->earliestBookableAt();
+        $latest        = $this->settings->latestBookableAt();
+
+        $slots = [];
 
         foreach ($schedules as $schedule) {
-            $start = Carbon::parse($date . ' ' . $schedule->start_time);
-            $end   = Carbon::parse($date . ' ' . $schedule->end_time);
+            // Doctor's window clamped to clinic hours.
+            $start = Carbon::parse($date . ' ' . $schedule->start_time)->max($clinicOpen);
+            $end   = Carbon::parse($date . ' ' . $schedule->end_time)->min($clinicClose);
 
             while ($start->lt($end)) {
-                $slotEnd = $start->copy()->addMinutes($slotDuration);
+                $slotEnd = $start->copy()->addMinutes($slotMinutes);
 
                 if ($slotEnd->gt($end)) {
                     break;
                 }
 
-                $isBooked = $appointments->contains(function ($appointment) use ($start, $slotEnd) {
-                    $appointmentStart = Carbon::parse($appointment->start_time);
-                    $appointmentEnd   = Carbon::parse($appointment->end_time);
-
-                    return $start->lt($appointmentEnd) && $slotEnd->gt($appointmentStart);
-                });
+                $reason = $this->slotBlockReason(
+                    $start, $slotEnd, $appointments, $clinicWide, $earliest, $latest
+                );
 
                 $slots[] = [
-                    'start_time'   => $start->toDateTimeString(),
-                    'end_time'     => $slotEnd->toDateTimeString(),
-                    'is_available' => !$isBooked && !$start->isPast(),
+                    'start_time'         => $start->toDateTimeString(),
+                    'end_time'           => $slotEnd->toDateTimeString(),
+                    'is_available'       => $reason === null,
+                    'unavailable_reason' => $reason,
                 ];
 
-                $start->addMinutes($slotDuration);
+                $start->addMinutes($strideMinutes);
             }
         }
 
@@ -312,6 +341,52 @@ class AppointmentRepository extends BaseRepository
             'branch_id' => $branchId,
             'slots'     => $slots,
         ];
+    }
+
+    /**
+     * First rule that blocks a slot, or null when it is bookable.
+     * Checks run cheapest-first; ordering is otherwise cosmetic.
+     */
+    private function slotBlockReason(
+        Carbon $start,
+        Carbon $slotEnd,
+        $doctorAppointments,
+        $clinicWideAppointments,
+        Carbon $earliest,
+        Carbon $latest,
+    ): ?string {
+        if ($start->isPast()) {
+            return 'past';
+        }
+
+        if ($this->settings->overlapsLunch($start, $slotEnd)) {
+            return 'lunch_break_start';
+        }
+
+        if ($start->lt($earliest)) {
+            return $this->settings->allowSameDayBooking
+                ? 'booking_lead_time_hours'
+                : 'allow_same_day_booking';
+        }
+
+        if ($start->gt($latest)) {
+            return 'max_advance_booking_days';
+        }
+
+        $overlaps = fn($appointment) =>
+            $start->lt(Carbon::parse($appointment->end_time))
+            && $slotEnd->gt(Carbon::parse($appointment->start_time));
+
+        if ($doctorAppointments->contains($overlaps)) {
+            return 'booked';
+        }
+
+        $concurrent = $clinicWideAppointments->filter($overlaps)->count();
+        if ($concurrent >= $this->settings->maxConcurrent) {
+            return 'max_concurrent_appointments';
+        }
+
+        return null;
     }
 
     public function getCalendarCounts(

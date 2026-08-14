@@ -7,6 +7,7 @@ use App\Domain\AppointmentReminders\Actions\ScheduleReminderAction;
 use App\Domain\Appointments\DTOs\CreateAppointmentDTO;
 use App\Domain\Appointments\Repositories\AppointmentRepository;
 use App\Domain\Appointments\Services\AppointmentService;
+use App\Domain\Appointments\Services\BookingRuleService;
 use App\Events\Appointments\AppointmentCreated;
 use App\Events\Dashboard\DashboardCountersStale;
 use App\Models\Appointment;
@@ -23,6 +24,7 @@ class CreateAppointmentAction
     public function __construct(
         private readonly AppointmentRepository  $repository,
         private readonly AppointmentService     $appointmentService,
+        private readonly BookingRuleService     $bookingRules,
         private readonly ScheduleReminderAction $scheduleReminder,
         private readonly ActivityLogger         $logger,
     ) {}
@@ -69,6 +71,11 @@ class CreateAppointmentAction
 
         // ─── 1. Validate appointment time ─────────────────────────────
         $this->appointmentService->validateAppointmentTime($dto);
+
+        // ─── 1b. Configurable booking rules ───────────────────────────
+        // Hard rules (working days, clinic hours, lunch) apply to everyone;
+        // capacity caps and booking windows apply to patients only.
+        $this->bookingRules->assertCanBook($dto, $authUser->isStaff());
 
         // ─── 2. Check doctor conflicts ────────────────────────────────
         if ($this->repository->checkConflicts(

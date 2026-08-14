@@ -3,10 +3,15 @@
 namespace App\Domain\Appointments\Services;
 
 use App\Domain\Appointments\DTOs\CreateAppointmentDTO;
+use App\Domain\Settings\DTOs\AppointmentSettings;
 use Carbon\Carbon;
 
 class AppointmentService
 {
+    public function __construct(
+        private readonly AppointmentSettings $settings,
+    ) {}
+
     /**
      * Validate appointment time
      */
@@ -23,10 +28,12 @@ class AppointmentService
             throw new \Exception('Cannot book appointments in the past');
         }
 
-        // Check minimum duration (30 minutes)
-        $minDuration = $startTime->copy()->addMinutes(30);
+        $minMinutes  = $this->settings->slotDurationMinutes;
+        $minDuration = $startTime->copy()->addMinutes($minMinutes);
         if ($endTime->lt($minDuration)) {
-            throw new \Exception('Appointment must be at least 30 minutes');
+            throw new \Exception(
+                "Appointment must be at least {$minMinutes} minutes (appointment_slot_duration)"
+            );
         }
     }
 
