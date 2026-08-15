@@ -31,6 +31,11 @@ class GetAllInventoriesRequest extends FormRequest
         return [
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'item_id' => ['nullable', 'integer', 'exists:items,id'],
+            // The client has always sent these two; without rules here
+            // validated() stripped them, so the search bar and the low-stock
+            // toggle both did nothing.
+            'search' => ['nullable', 'string', 'max:100'],
+            'low_stock_only' => ['nullable', 'boolean'],
             'offset' => ['nullable', 'integer', 'min:0'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
             'order_by' => ['nullable', Rule::in($this->getValidColumns())],

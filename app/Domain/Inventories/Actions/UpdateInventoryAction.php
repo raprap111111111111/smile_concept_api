@@ -31,8 +31,13 @@ class UpdateInventoryAction
             'branch_id' => $dto->branchId,
             'item_id' => $dto->itemId,
             'quantity' => $dto->quantity,
-            'expiry_date' => $dto->expiryDate,
         ], fn($value) => !is_null($value));
+
+        // expiry_date is legitimately nullable, so it cannot ride the filter
+        // above — clearing it means writing null, not omitting the key.
+        if ($dto->expiryDateProvided) {
+            $data['expiry_date'] = $dto->expiryDate;
+        }
 
         return $this->repository->update($inventory, $data);
     }

@@ -14,12 +14,16 @@ class AppointmentTreatment extends Model
         'appointment_id',
         'treatment_id',
         'tooth_number',
+        // How many times this procedure was performed. Read by stock deduction
+        // only — price_charged is unaffected and still means what it always did.
+        'quantity',
         'price_charged',
         'notes',
     ];
 
     protected $casts = [
         'price_charged' => 'decimal:2',
+        'quantity' => 'integer',
     ];
 
     public function appointment(): BelongsTo

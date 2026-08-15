@@ -118,6 +118,10 @@ class RolePermissionSeeder extends Seeder
                     'export',
                 ]),
                 'inventory-category' => $basicCrud,
+                // PermissionSeeder creates item.* but nothing ever requested
+                // them, so every role below super-admin 403'd on /api/v1/items —
+                // the catalog behind the whole inventory feature.
+                'item'               => $basicCrud,
                 'supplier'           => $basicCrud,
                 'purchase-order'     => array_merge($basicCrud, ['approve', 'receive', 'cancel']),
 
@@ -223,7 +227,11 @@ class RolePermissionSeeder extends Seeder
                 'payment'          => $readOnly,
 
                 // ── Inventory (read-only) ─────────────────────────────
+                // `item` as well as `inventory`: the stock list renders the
+                // item's name and SKU, so a dentist who cannot read the catalog
+                // sees a list of blanks.
                 'inventory'        => $readOnly,
+                'item'             => $readOnly,
 
                 // ── Landing Page ──────────────────────────────────────
                 'service'          => $readOnly,
@@ -292,6 +300,7 @@ class RolePermissionSeeder extends Seeder
 
                 // ── Inventory (read-only) ─────────────────────────────
                 'inventory'        => $readOnly,
+                'item'             => $readOnly,
 
                 // ── Landing Page ──────────────────────────────────────
                 'service'          => $readOnly,

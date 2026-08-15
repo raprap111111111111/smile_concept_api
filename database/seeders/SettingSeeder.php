@@ -74,6 +74,16 @@ class SettingSeeder extends Seeder
             ['key' => 'secondary_color', 'value' => '#f59e0b', 'group' => 'branding', 'type' => 'string', 'label' => 'Secondary Color', 'is_public' => true],
             ['key' => 'logo_url',        'value' => '/logo.png','group'=> 'branding', 'type' => 'string', 'label' => 'Logo URL',        'is_public' => true],
 
+            // ─── Inventory ────────────────────────────
+            ['key' => 'inventory_auto_deduct_enabled',  'value' => '1',  'group' => 'inventory', 'type' => 'boolean', 'label' => 'Deduct Stock Automatically',        'description' => 'Draws supplies from stock when an appointment is completed, using each treatment\'s consumables list.'],
+            ['key' => 'inventory_allow_negative_stock', 'value' => '1',  'group' => 'inventory', 'type' => 'boolean', 'label' => 'Allow Negative Stock',              'description' => 'Records a shortfall when supplies run out rather than hiding it. Never blocks an appointment either way.'],
+            ['key' => 'inventory_track_expiry',         'value' => '1',  'group' => 'inventory', 'type' => 'boolean', 'label' => 'Track Expiry Dates',                'description' => 'Requires an expiry date on incoming stock so batches can be consumed earliest-first.'],
+            ['key' => 'inventory_expiry_warning_days',  'value' => '30', 'group' => 'inventory', 'type' => 'integer', 'label' => 'Expiry Warning Window (days)',      'description' => 'How far ahead to warn that a batch is about to expire.'],
+            ['key' => 'inventory_default_minimum_threshold', 'value' => '10', 'group' => 'inventory', 'type' => 'integer', 'label' => 'Default Reorder Point',        'description' => 'Used for items that do not set their own minimum threshold.'],
+            ['key' => 'inventory_low_stock_alert_enabled',   'value' => '1',  'group' => 'inventory', 'type' => 'boolean', 'label' => 'Send Low-Stock Alerts',        'description' => 'Sends a daily digest of items at or below their reorder point.'],
+            ['key' => 'inventory_low_stock_alert_hour',      'value' => '8',  'group' => 'inventory', 'type' => 'integer', 'label' => 'Low-Stock Alert Hour (0-23)',  'description' => 'Hour of the day the digest is sent.'],
+            ['key' => 'inventory_low_stock_cooldown_days',   'value' => '3',  'group' => 'inventory', 'type' => 'integer', 'label' => 'Low-Stock Alert Cooldown (days)', 'description' => 'How long before the same item is alerted on again.'],
+
             // ─── Feature Flags ────────────────────────
             ['key' => 'enable_dental_chart',   'value' => '1', 'group' => 'features', 'type' => 'boolean', 'label' => 'Enable Dental Chart'],
             ['key' => 'enable_patient_portal', 'value' => '1', 'group' => 'features', 'type' => 'boolean', 'label' => 'Enable Patient Portal'],

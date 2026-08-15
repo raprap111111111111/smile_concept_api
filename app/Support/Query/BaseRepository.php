@@ -84,26 +84,12 @@ abstract class BaseRepository
         $offset = $this->resolveOffset($params);
         $page = $this->resolvePage($offset, $limit);
 
-        // 🔴 DEBUG — right before pagination
-        \Log::info('═══ BEFORE $query->paginate() ═══', [
-            'sql'      => $query->toSql(),
-            'bindings' => $query->getBindings(),
-            'wheres'   => $query->getQuery()->wheres,
-            'params'   => $params,
-        ]);
-
         $paginator = $query->paginate(
             perPage: $limit,
             columns: ['*'],
             pageName: 'page',
             page: $page
         );
-
-        // 🔴 DEBUG — after
-        \Log::info('═══ AFTER $query->paginate() ═══', [
-            'total' => $paginator->total(),
-            'count' => count($paginator->items()),
-        ]);
 
         $items = $paginator->items();
 
