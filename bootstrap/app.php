@@ -50,6 +50,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ->hourly()
             ->withoutOverlapping()
             ->runInBackground();
+
+        // Hourly rather than dailyAt(): the send hour is admin-tunable via
+        // inventory_low_stock_alert_hour, and the schedule is built at boot
+        // from static config, so the command checks the hour itself.
+        $schedule->command('inventory:check-levels')
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

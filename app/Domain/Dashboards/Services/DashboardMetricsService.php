@@ -2,9 +2,12 @@
 
 namespace App\Domain\Dashboards\Services;
 
+use App\Domain\Inventories\DTOs\InventorySettings;
 use App\Enums\AppointmentStatus;
 use App\Models\ActivityLog;
 use App\Models\Appointment;
+use App\Models\Inventory;
+use App\Models\InventoryBatch;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
@@ -73,7 +76,57 @@ class DashboardMetricsService
             'appointmentsTodayByHour' => $this->getAppointmentsByHour($today),
             'newPatientsTrend'        => $this->getNewPatientsTrend(),
             'newPatientsByMonth'      => $this->getNewPatientsByMonth(),
+
+            // Supply health. Counts only — the inventory page is where you act
+            // on them, and a dashboard tile that tries to list items competes
+            // with it badly.
+            'lowStockItems'    => $this->countLowStock(),
+            'expiringBatches'  => $this->countExpiringBatches(),
+            'negativeStock'    => $this->countNegativeStock(),
         ];
+    }
+
+    /**
+     * Items at or below their own reorder point.
+     *
+     * Cross-table, so it cannot be a plain where(): the threshold lives on the
+     * item, the quantity on the branch's stock row. Mirrors
+     * Inventory::isLowStock() and InventoryRepository::applyLowStockFilter().
+     */
+    private function countLowStock(): int
+    {
+        return Inventory::query()
+            ->whereHas('item', fn ($q) => $q->whereColumn(
+                'items.minimum_threshold', '>=', 'inventories.quantity'
+            ))
+            ->count();
+    }
+
+    /**
+     * Open batches expiring inside the configured warning window.
+     *
+     * Already-expired lots count too — they are the most urgent thing on the
+     * shelf and must not drop off once the date passes.
+     */
+    private function countExpiringBatches(): int
+    {
+        $cutoff = CarbonImmutable::now()
+            ->addDays(app(InventorySettings::class)->expiryWarningDays);
+
+        return InventoryBatch::query()
+            ->open()
+            ->whereNotNull('expiry_date')
+            ->where('expiry_date', '<=', $cutoff)
+            ->count();
+    }
+
+    /**
+     * Stock rows that have gone negative — supplies used beyond what was on
+     * record. Each one is a reconciliation someone still owes.
+     */
+    private function countNegativeStock(): int
+    {
+        return Inventory::query()->where('quantity', '<', 0)->count();
     }
 
     /**

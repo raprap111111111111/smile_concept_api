@@ -33,6 +33,14 @@ class GetAllBranchRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'min:1', 'max:100'],
+            // Opt-in: restrict to branches this user actually works at.
+            //
+            // Deliberately not the default. Branch pickers on booking and
+            // scheduling forms legitimately list every branch, and several
+            // roles carry no branch_user rows at all — forcing the scope here
+            // would empty those pickers system-wide. Callers that need the
+            // narrower list ask for it.
+            'mine' => ['nullable', 'boolean'],
             'offset' => ['nullable', 'integer', 'min:0'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_LIMIT],
             'order_by' => ['nullable', Rule::in($this->getValidColumns())],

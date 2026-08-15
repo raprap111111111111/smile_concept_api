@@ -2,14 +2,20 @@
 
 namespace App\Http\Requests\v1\Inventory;
 
+use App\Http\Requests\Concerns\ChecksBranchAccess;
 use App\Models\Inventory;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreInventoryRequest extends FormRequest
 {
+    use ChecksBranchAccess;
+
     public function authorize(): bool
     {
-        return $this->user()->can('create', Inventory::class);
+        // InventoryPolicy::create() cannot see the branch — it arrives in the
+        // body, not the route — so the branch half of the check happens here.
+        return $this->user()->can('create', Inventory::class)
+            && $this->canAccessBranch($this->input('branch_id'));
     }
 
     public function rules(): array

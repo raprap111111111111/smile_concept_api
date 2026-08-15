@@ -6,6 +6,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Inventory extends Model
 {
@@ -16,11 +17,13 @@ class Inventory extends Model
         'item_id',
         'quantity',
         'expiry_date',
+        'last_low_stock_alert_at',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'expiry_date' => 'date',
+        'last_low_stock_alert_at' => 'datetime',
     ];
 
     public function branch(): BelongsTo
@@ -31,6 +34,24 @@ class Inventory extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    /**
+     * The lots behind this summary row.
+     *
+     * `inventories` is keyed on branch+item rather than owning an id the batches
+     * point at, so this is matched on both columns rather than a plain hasMany.
+     */
+    public function batches(): HasMany
+    {
+        return $this->hasMany(InventoryBatch::class, 'item_id', 'item_id')
+            ->where('inventory_batches.branch_id', $this->branch_id);
+    }
+
+    public function movements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class, 'item_id', 'item_id')
+            ->where('stock_movements.branch_id', $this->branch_id);
     }
 
     /**

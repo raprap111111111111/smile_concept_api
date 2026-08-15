@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Domain\Auth\Repositories\UserRepository;
 use App\Domain\Auth\Repositories\UserRepositoryInterface;
+use App\Domain\Branch\Services\BranchScope;
+use App\Domain\Inventories\DTOs\InventorySettings;
 use App\Domain\Settings\DTOs\AppointmentSettings;
 use App\Domain\Settings\Services\SettingService;
 use Illuminate\Foundation\Console\ServeCommand;
@@ -26,6 +28,16 @@ class AppServiceProvider extends ServiceProvider
             AppointmentSettings::class,
             fn($app) => AppointmentSettings::make($app->make(SettingService::class)),
         );
+
+        $this->app->scoped(
+            InventorySettings::class,
+            fn($app) => InventorySettings::make($app->make(SettingService::class)),
+        );
+
+        // Scoped for the same reason: BranchScope memoises a user's branch
+        // memberships, and a queue worker must not carry one job's answer into
+        // the next.
+        $this->app->scoped(BranchScope::class);
 
         // Reverb is excluded from package auto-discovery (composer.json
         // `extra.laravel.dont-discover`) and registered from here instead.

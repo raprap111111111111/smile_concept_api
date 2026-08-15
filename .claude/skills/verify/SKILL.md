@@ -31,6 +31,25 @@ Base URL `http://127.0.0.1:8099/api/v1`, headers `Authorization: Bearer <token>`
 - Reschedule: `PUT /appointments/{id}` with new `start_time`/`end_time`
 - Status: `PATCH /appointments/{id}/status`
 
+## Tests
+
+`php artisan test` runs on SQLite in memory (see `phpunit.xml`). That is fast, but
+it silently no-ops some MySQL behaviour — notably `lockForUpdate()`, which
+compiles to nothing.
+
+`StockConcurrencyTest` therefore skips on SQLite and needs a real MySQL database:
+
+```bash
+mysql -uroot -e "CREATE DATABASE IF NOT EXISTS smileconcept_test"
+DB_CONNECTION=mysql DB_DATABASE=smileconcept_test php artisan test --filter=StockConcurrencyTest
+```
+
+It uses `DatabaseMigrations`, not `RefreshDatabase` — a second connection cannot
+see fixtures that are still inside an uncommitted transaction. Expect ~25s;
+most of that is `migrate:fresh` against MySQL.
+
+Never point it at `smileconcept`: it migrates fresh and would drop your dev data.
+
 ## Gotchas
 
 - Notifications implementing `ShouldQueue` land in `jobs` table — drain with `php artisan queue:work --stop-when-empty` before asserting on `notifications` table.

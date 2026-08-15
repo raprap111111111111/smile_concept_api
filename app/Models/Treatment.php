@@ -35,4 +35,13 @@ class Treatment extends Model
     {
         return $this->hasMany(AppointmentTreatment::class);
     }
+
+    /**
+     * Supplies this treatment consumes — the recipe automatic deduction reads
+     * when an appointment is completed.
+     */
+    public function consumables(): HasMany
+    {
+        return $this->hasMany(TreatmentConsumable::class);
+    }
 }

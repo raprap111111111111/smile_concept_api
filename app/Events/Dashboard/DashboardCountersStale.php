@@ -22,6 +22,13 @@ class DashboardCountersStale implements ShouldBroadcast, ShouldDispatchAfterComm
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * Stock levels. Unlike the three below it this has no dashboard endpoint of
+     * its own yet — it is dispatched when a shortfall is recorded so a client
+     * showing stock can refetch without polling.
+     */
+    public const SCOPE_INVENTORY = 'inventory';
+
     public const SCOPE_STATS = 'stats';
     public const SCOPE_SCHEDULE = 'schedule';
     public const SCOPE_ACTIVITY = 'activity';

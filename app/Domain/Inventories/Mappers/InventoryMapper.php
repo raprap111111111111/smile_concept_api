@@ -25,7 +25,8 @@ class InventoryMapper
             branchId: $request->validated('branch_id') ? (int) $request->validated('branch_id') : null,
             itemId: $request->validated('item_id') ? (int) $request->validated('item_id') : null,
             quantity: $request->has('quantity') ? (int) $request->validated('quantity') : null,
-            expiryDate: $request->validated('expiry_date')
+            expiryDate: $request->validated('expiry_date'),
+            expiryDateProvided: $request->has('expiry_date'),
         );
     }
 }

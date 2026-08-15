@@ -5,6 +5,8 @@ namespace App\Domain\Appointments\Actions;
 use App\Domain\ActivityLogs\Services\ActivityLogger;
 use App\Domain\AppointmentReminders\Repositories\AppointmentReminderRepository;
 use App\Domain\Appointments\Services\BookingRuleService;
+use App\Domain\Inventories\Actions\ConsumeAppointmentSuppliesAction;
+use App\Domain\Inventories\DTOs\ConsumptionResult;
 use App\Enums\AppointmentStatus;
 use App\Events\Appointments\AppointmentStatusChanged;
 use App\Events\Dashboard\DashboardCountersStale;
@@ -14,14 +16,16 @@ use App\Notifications\AppointmentBookedNotification;
 use App\Notifications\AppointmentCancelledNotification;
 use DomainException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class UpdateAppointmentStatusAction
 {
     public function __construct(
-        private readonly ActivityLogger                $logger,
-        private readonly AppointmentReminderRepository $reminderRepository,
-        private readonly BookingRuleService            $bookingRules,
+        private readonly ActivityLogger                    $logger,
+        private readonly AppointmentReminderRepository     $reminderRepository,
+        private readonly BookingRuleService                $bookingRules,
+        private readonly ConsumeAppointmentSuppliesAction  $consumeSupplies,
     ) {}
 
     /**
@@ -69,20 +73,51 @@ class UpdateAppointmentStatusAction
         }
 
         // ─── 5. Persist ──────────────────────────────────────
-        $appointment->update($updateData);
+        // Wrapped so the status write, the reminder cancellation and the stock
+        // deduction commit or roll back together. Previously this was a bare
+        // update(); once completion also draws down inventory, a half-applied
+        // completion would leave the ledger describing an appointment that
+        // never finished.
+        //
+        // Notifications and broadcasts stay OUTSIDE — they are at step 8, and
+        // AppointmentStatusChanged / DashboardCountersStale both implement
+        // ShouldDispatchAfterCommit anyway.
+        $consumption = DB::transaction(function () use (
+            $appointment,
+            $updateData,
+            $newStatus,
+            $previousStatus,
+            $cancellationReason,
+        ): ?ConsumptionResult {
+            $appointment->update($updateData);
 
-        // ─── 5b. Cancel pending reminders on cancellation ────
-        // Prevents reminder alerts firing for a cancelled appointment
-        if ($newStatus === AppointmentStatus::CANCELLED) {
-            $this->reminderRepository->cancelPendingForAppointment($appointment->id);
-        }
+            // ─── 5b. Cancel pending reminders on cancellation ────
+            // Prevents reminder alerts firing for a cancelled appointment
+            if ($newStatus === AppointmentStatus::CANCELLED) {
+                $this->reminderRepository->cancelPendingForAppointment($appointment->id);
+            }
 
-        // ─── 6. Audit log ─────────────────────────────────────
-        $this->logger->log($appointment, 'status_changed', [
-            'from'   => $previousStatus->value,
-            'to'     => $newStatus->value,
-            'reason' => $cancellationReason,
-        ]);
+            // ─── 5c. Draw down the supplies this visit used ──────
+            // Guarded on an actual transition for the same reason as the
+            // notifications below: validateTransition() lets a same-status PATCH
+            // through as a no-op. ConsumeAppointmentSuppliesAction checks the
+            // ledger as well, so this is belt and braces rather than the only
+            // protection.
+            $consumed = null;
+
+            if ($newStatus === AppointmentStatus::COMPLETED && $previousStatus !== $newStatus) {
+                $consumed = $this->consumeSupplies->execute($appointment);
+            }
+
+            // ─── 6. Audit log ─────────────────────────────────────
+            $this->logger->log($appointment, 'status_changed', [
+                'from'   => $previousStatus->value,
+                'to'     => $newStatus->value,
+                'reason' => $cancellationReason,
+            ]);
+
+            return $consumed;
+        });
 
         // ─── 7. Reload fresh relations ───────────────────────
         $appointment = $appointment->fresh(['user', 'doctor.user', 'branch']);
@@ -97,14 +132,19 @@ class UpdateAppointmentStatusAction
 
             AppointmentStatusChanged::dispatch($appointment, $previousStatus->value);
 
-            DashboardCountersStale::dispatch(
-                [
-                    DashboardCountersStale::SCOPE_STATS,
-                    DashboardCountersStale::SCOPE_SCHEDULE,
-                    DashboardCountersStale::SCOPE_ACTIVITY,
-                ],
-                'appointment.status_changed',
-            );
+            $scopes = [
+                DashboardCountersStale::SCOPE_STATS,
+                DashboardCountersStale::SCOPE_SCHEDULE,
+                DashboardCountersStale::SCOPE_ACTIVITY,
+            ];
+
+            // A completion that moved stock invalidates any stock the client is
+            // showing too.
+            if ($consumption !== null && ! $consumption->skipped) {
+                $scopes[] = DashboardCountersStale::SCOPE_INVENTORY;
+            }
+
+            DashboardCountersStale::dispatch($scopes, 'appointment.status_changed');
         }
 
         return $appointment;
