@@ -20,17 +20,20 @@ class SignConsentAction
             );
         }
 
-        return PatientConsent::create([
-            'consent_template_id' => $dto->consentTemplateId,
-            'user_id'             => $dto->userId,         
-            'appointment_id'      => $dto->appointmentId,
-            'signed_by_staff_id'  => $dto->signedByStaffId, 
-            'signed_at'           => now(),
-            'signature_data'      => $dto->signatureData,
-            'ip_address'          => $dto->ipAddress,
-            'user_agent'          => $dto->userAgent,
-        ]);
+       
 
- 
+        return PatientConsent::create([
+            'consent_template_id'   => $dto->consentTemplateId,
+            'user_id'               => $dto->userId,
+            'appointment_id'        => $dto->appointmentId,
+            'signed_by_staff_id'    => $dto->signedByStaffId,
+            'signed_by_guardian_id' => $dto->signedByGuardianId,   
+            'signer_relationship'   => $dto->signerRelationship,   
+            'signed_at'             => now(),
+            'signature_data'        => $dto->signatureData,
+            'form_data'             => $dto->formData,            
+            'ip_address'            => $dto->ipAddress,
+            'user_agent'            => $dto->userAgent,
+        ]);
     }
 }
