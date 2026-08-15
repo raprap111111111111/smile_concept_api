@@ -13,12 +13,17 @@ class PatientConsentResource extends JsonResource
             'id'             => $this->id,
             'signed_at'      => $this->signed_at,
 
-            // ✅ call on underlying model — avoids __call forwarding bug
             'is_voided'      => $this->resource->isVoided(),
             'is_valid'       => $this->resource->isValid(),
 
             'voided_at'      => $this->voided_at,
             'voided_reason'  => $this->voided_reason,
+
+            // ✅ NEW — signer role tracking
+            'signer_relationship' => $this->signer_relationship ?? null,
+
+            // ✅ NEW — expose captured form answers
+            'form_data'      => $this->form_data,
 
             'template' => $this->whenLoaded('template', fn () => [
                 'id'    => $this->template->id,
@@ -47,7 +52,16 @@ class PatientConsentResource extends JsonResource
                 ] : null,
             ),
 
-            // Only include signature data on individual view / sign response
+            // ✅ NEW — guardian info (if signed by guardian)
+            'signed_by_guardian' => $this->whenLoaded(
+                'signedByGuardian',
+                fn () => $this->signedByGuardian ? [
+                    'id'   => $this->signedByGuardian->id,
+                    'name' => $this->signedByGuardian->name,
+                ] : null,
+            ),
+
+            // Signature — only on show / sign response
             'signature_data' => $this->when(
                 $request->routeIs('*.show') || $request->routeIs('*.sign'),
                 $this->signature_data,
