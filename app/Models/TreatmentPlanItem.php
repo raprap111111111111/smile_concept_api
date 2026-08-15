@@ -14,12 +14,16 @@ class TreatmentPlanItem extends Model
         'treatment_plan_id',
         'treatment_id',
         'sequence_order',
+        'quantity',
+        'unit_price',
         'estimated_cost',
         'notes',
     ];
 
     protected $casts = [
         'sequence_order' => 'integer',
+        'quantity' => 'integer',
+        'unit_price' => 'decimal:2',
         'estimated_cost' => 'decimal:2',
     ];
 

@@ -19,6 +19,7 @@ class TreatmentPlanMapper
             return new CreateTreatmentPlanItemDTO(
                 treatmentId: (int) $item['treatment_id'],
                 sequenceOrder: (int) $item['sequence_order'],
+                quantity: (int) ($item['quantity'] ?? 1),
                 notes: $item['notes'] ?? null
             );
         }, $request->validated('items', []));
@@ -40,6 +41,7 @@ class TreatmentPlanMapper
                 return new CreateTreatmentPlanItemDTO(
                     treatmentId: (int) $item['treatment_id'],
                     sequenceOrder: (int) $item['sequence_order'],
+                    quantity: (int) ($item['quantity'] ?? 1),
                     notes: $item['notes'] ?? null
                 );
             }, $request->validated('items', []));

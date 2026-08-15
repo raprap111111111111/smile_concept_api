@@ -25,6 +25,7 @@ class UpdateTreatmentPlanRequest extends FormRequest
             'items' => ['sometimes', 'required', 'array', 'min:1'],
             'items.*.treatment_id' => ['required_with:items', 'integer', 'exists:treatments,id'],
             'items.*.sequence_order' => ['required_with:items', 'integer', 'min:1'],
+            'items.*.quantity' => ['sometimes', 'integer', 'min:1', 'max:99'],
             'items.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
