@@ -22,6 +22,9 @@ class StoreTreatmentPlanRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.treatment_id' => ['required', 'integer', 'exists:treatments,id'],
             'items.*.sequence_order' => ['required', 'integer', 'min:1'],
+            // Optional so existing single-quantity callers keep working; the
+            // ceiling matches the form's stepper.
+            'items.*.quantity' => ['sometimes', 'integer', 'min:1', 'max:99'],
             'items.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }

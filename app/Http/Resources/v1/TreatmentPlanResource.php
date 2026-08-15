@@ -30,6 +30,9 @@ class TreatmentPlanResource extends JsonResource
                     'sequence_order' => $item->sequence_order,
                     'treatment_id' => $item->treatment_id,
                     'treatment_name' => $item->treatment?->name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    // Line total: unit_price x quantity.
                     'estimated_cost' => $item->estimated_cost,
                     'notes' => $item->notes,
                 ];

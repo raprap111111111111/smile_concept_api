@@ -41,12 +41,19 @@ class UpdateTreatmentPlanAction
 
                 foreach ($dto->items as $item) {
                     $treatment = Treatment::findOrFail($item->treatmentId);
-                    $totalEstimate += (float) $treatment->price;
+
+                    // Re-quoted against today's catalog price, since replacing
+                    // the items is an explicit re-write of the plan.
+                    $unitPrice = (float) $treatment->price;
+                    $lineTotal = $unitPrice * $item->quantity;
+                    $totalEstimate += $lineTotal;
 
                     $plan->items()->create([
                         'treatment_id' => $item->treatmentId,
                         'sequence_order' => $item->sequenceOrder,
-                        'estimated_cost' => $treatment->price,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $unitPrice,
+                        'estimated_cost' => $lineTotal,
                         'notes' => $item->notes,
                     ]);
                 }

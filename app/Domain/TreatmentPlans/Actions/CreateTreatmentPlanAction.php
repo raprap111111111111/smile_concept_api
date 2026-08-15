@@ -27,12 +27,19 @@ class CreateTreatmentPlanAction
 
             foreach ($dto->items as $item) {
                 $treatment = Treatment::findOrFail($item->treatmentId);
-                $totalEstimate += (float) $treatment->price;
+
+                // unit_price freezes the catalog price at quote time; a later
+                // catalog change must not move an already-quoted plan.
+                $unitPrice = (float) $treatment->price;
+                $lineTotal = $unitPrice * $item->quantity;
+                $totalEstimate += $lineTotal;
 
                 $itemsData[] = [
                     'treatment_id' => $item->treatmentId,
                     'sequence_order' => $item->sequenceOrder,
-                    'estimated_cost' => $treatment->price,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $unitPrice,
+                    'estimated_cost' => $lineTotal,
                     'notes' => $item->notes,
                 ];
             }

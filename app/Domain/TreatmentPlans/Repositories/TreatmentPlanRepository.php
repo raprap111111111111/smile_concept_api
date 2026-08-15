@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Auth;
 class TreatmentPlanRepository extends BaseRepository
 {
     protected string $model = TreatmentPlan::class;
+
+    // TreatmentPlanResource reads every one of these. Without eager loading the
+    // index endpoint lazy-loads them once per plan.
+    protected array $relations = ['items.treatment', 'patient', 'doctor.user'];
     protected array $searchable = ['name'];
     protected array $filterable = ['user_id', 'doctor_id', 'status'];
     protected array $sortable = ['id', 'total_estimated_amount', 'created_at'];
