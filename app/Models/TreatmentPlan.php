@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class TreatmentPlan extends Model
 {
@@ -40,5 +41,11 @@ class TreatmentPlan extends Model
     public function items(): HasMany
     {
         return $this->hasMany(TreatmentPlanItem::class)->orderBy('sequence_order', 'asc');
+    }
+
+    /** Ledger movements this plan caused, e.g. supplies recorded after completion. */
+    public function stockMovements(): MorphMany
+    {
+        return $this->morphMany(StockMovement::class, 'reference', 'reference_type', 'reference_id');
     }
 }

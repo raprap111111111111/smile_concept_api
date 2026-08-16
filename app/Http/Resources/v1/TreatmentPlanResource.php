@@ -16,6 +16,9 @@ class TreatmentPlanResource extends JsonResource
             'status_label' => $this->status?->label(),
             'total_estimated_amount' => $this->total_estimated_amount,
             'notes' => $this->notes,
+            // Present only when the query loaded it (index/show); defaults to
+            // false elsewhere — the client re-fetches after every mutation.
+            'consumables_recorded' => (bool) ($this->consumables_recorded ?? false),
             'patient' => [
                 'id' => $this->patient?->id,
                 'name' => $this->patient?->name,
