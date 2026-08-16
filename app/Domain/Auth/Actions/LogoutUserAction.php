@@ -2,6 +2,7 @@
 
 namespace App\Domain\Auth\Actions;
 
+use Illuminate\Auth\Events\Logout; 
 use Illuminate\Http\Request;
 
 class LogoutUserAction
@@ -11,7 +12,13 @@ class LogoutUserAction
      */
     public function execute(Request $request): void
     {
-        // Delete the specific token instance used for this request
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+
+        if ($user) {
+            event(new Logout('api', $user));
+        }
+
+        // Then delete the specific token
+        $user?->currentAccessToken()?->delete();
     }
 }

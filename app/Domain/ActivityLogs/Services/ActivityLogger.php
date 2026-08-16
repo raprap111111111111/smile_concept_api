@@ -11,13 +11,12 @@ class ActivityLogger
 {
     /**
      * Record an activity for any model.
-     *
-     * @param  Model  $subject  The model the action was performed on
-     * @param  string $action   e.g. "created", "updated", "deleted", "logged_in"
-     * @param  array  $properties Extra context (changed fields, old/new values, etc.)
      */
-    public function log(Model $subject, string $action, array $properties = []): ActivityLog
-    {
+    public function log(
+        Model $subject,
+        string $action,
+        array $properties = []
+    ): ActivityLog {
         return ActivityLog::create([
             'user_id'      => Auth::id(),
             'action'       => $action,
@@ -32,11 +31,16 @@ class ActivityLogger
 
     /**
      * Log a non-model action (e.g. login, logout, export).
+     * 
+     * @param int|null $userId  Override Auth::id() when user isn't in session yet
      */
-    public function logEvent(string $action, array $properties = []): ActivityLog
-    {
+    public function logEvent(
+        string $action,
+        array $properties = [],
+        ?int $userId = null
+    ): ActivityLog {
         return ActivityLog::create([
-            'user_id'      => Auth::id(),
+            'user_id'      => $userId ?? Auth::id(),
             'action'       => $action,
             'subject_type' => 'system',
             'subject_id'   => 0,
