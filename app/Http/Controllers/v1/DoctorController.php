@@ -40,10 +40,18 @@ class DoctorController extends Controller
 
     public function show(Doctor $doctor): JsonResponse
     {
+        $doctor
+            ->loadCount([
+                'schedules',
+                'appointments',
+            ])
+            ->load([
+                'user.branches',
+                'schedules.branch', 
+            ]);
+
         return $this->successResponse(
-            new DoctorResource(
-                $doctor->load(['user.branches', 'schedules', 'appointments'])
-            ),
+            new DoctorResource($doctor),
             'Doctor retrieved successfully'
         );
     }
