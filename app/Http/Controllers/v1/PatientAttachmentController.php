@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\v1;
 
+use App\Domain\ActivityLogs\Services\ActivityLogger;
 use App\Domain\PatientAttachments\Actions\CreatePatientAttachmentAction;
 use App\Domain\PatientAttachments\Actions\DeletePatientAttachmentAction;
 use App\Domain\PatientAttachments\Actions\UpdatePatientAttachmentAction;
@@ -19,6 +20,8 @@ use App\Models\PatientAttachment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class PatientAttachmentController extends Controller
 {
@@ -29,6 +32,12 @@ class PatientAttachmentController extends Controller
 
     /** Subfolder inside the disk */
     private const FOLDER = 'patient-attachments';
+
+    /** How long access tokens stay valid */
+    private const ACCESS_TOKEN_TTL_MINUTES = 30;
+
+    /** Cache key prefix for access tokens */
+    private const CACHE_PREFIX = 'attachment_access:';
 
     public function __construct(
         private readonly PatientAttachmentRepository $repository,
@@ -150,32 +159,73 @@ class PatientAttachmentController extends Controller
     }
 
     // ═══════════════════════════════════════════════════════
-    // ✅ FILE STREAMING (Authenticated)
+    // ✅ TOKEN-BASED ACCESS — works in browsers without auth
     // ═══════════════════════════════════════════════════════
 
     /**
-     * Stream file inline (for viewing images/PDFs).
-     * GET /api/v1/patient-attachments/{id}/file
+     * Generate temporary access URLs.
+     * These URLs work in browser tabs, <img> tags, print dialogs.
+     *
+     * GET /api/v1/patient-attachments/{id}/access-url
      */
-    public function file(PatientAttachment $patientAttachment)
+    public function accessUrl(PatientAttachment $patientAttachment): JsonResponse
     {
-        // Optional: Add authorization
+        // Optional: check the user has permission first
         // $this->authorize('view', $patientAttachment);
 
+        $fileToken     = $this->generateToken($patientAttachment->id);
+        $downloadToken = $this->generateToken($patientAttachment->id);
+
+        return $this->successResponse([
+            'file_url'     => url("/api/v1/patient-attachments/file/{$fileToken}"),
+            'download_url' => url("/api/v1/patient-attachments/download/{$downloadToken}"),
+            'expires_at'   => now()->addMinutes(self::ACCESS_TOKEN_TTL_MINUTES)->toIso8601String(),
+        ], 'Access URL generated.');
+    }
+
+    /**
+     * Stream file by access token.
+     * GET /api/v1/patient-attachments/file/{token}
+     */
+    public function fileByToken(string $token)
+    {
+        $attachment = $this->resolveAttachmentByToken($token);
+
+        return $this->streamFile(
+            relativePath: $this->getPath($attachment),
+            disk: self::DISK,
+        );
+    }
+
+    /**
+     * Download file by access token.
+     * GET /api/v1/patient-attachments/download/{token}
+     */
+    public function downloadByToken(string $token)
+    {
+        $attachment = $this->resolveAttachmentByToken($token);
+
+        return $this->downloadFile(
+            relativePath: $this->getPath($attachment),
+            disk: self::DISK,
+            downloadName: $this->buildDownloadName($attachment),
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ✅ LEGACY — Authenticated direct access
+    // ═══════════════════════════════════════════════════════
+
+    public function file(PatientAttachment $patientAttachment)
+    {
         return $this->streamFile(
             relativePath: $this->getPath($patientAttachment),
             disk: self::DISK,
         );
     }
 
-    /**
-     * Force download.
-     * GET /api/v1/patient-attachments/{id}/download
-     */
     public function download(PatientAttachment $patientAttachment)
     {
-        // $this->authorize('download', $patientAttachment);
-
         return $this->downloadFile(
             relativePath: $this->getPath($patientAttachment),
             disk: self::DISK,
@@ -184,8 +234,56 @@ class PatientAttachmentController extends Controller
     }
 
     // ═══════════════════════════════════════════════════════
+    // ✅ AUDIT — Print log
+    // ═══════════════════════════════════════════════════════
+
+    public function logPrint(
+        PatientAttachment $patientAttachment,
+        ActivityLogger $logger
+    ): JsonResponse {
+        $logger->log($patientAttachment, 'printed', [
+            'file_name'  => $patientAttachment->file_name
+                ?? basename($this->getPath($patientAttachment) ?? ''),
+            'file_type'  => $patientAttachment->file_type ?? null,
+            'printed_by' => auth()->user()?->name,
+        ]);
+
+        return $this->successResponse(null, 'Print logged.');
+    }
+
+    // ═══════════════════════════════════════════════════════
     // HELPERS
     // ═══════════════════════════════════════════════════════
+
+    /**
+     * Create a random token, cache it → attachment ID mapping.
+     */
+    private function generateToken(int $attachmentId): string
+    {
+        $token = Str::random(64);
+
+        Cache::put(
+            self::CACHE_PREFIX . $token,
+            $attachmentId,
+            now()->addMinutes(self::ACCESS_TOKEN_TTL_MINUTES)
+        );
+
+        return $token;
+    }
+
+    /**
+     * Look up token → return the attachment or 403.
+     */
+    private function resolveAttachmentByToken(string $token): PatientAttachment
+    {
+        $attachmentId = Cache::get(self::CACHE_PREFIX . $token);
+
+        if (! $attachmentId) {
+            abort(403, 'Invalid or expired access token.');
+        }
+
+        return PatientAttachment::findOrFail($attachmentId);
+    }
 
     private function getPath(PatientAttachment $attachment): ?string
     {
