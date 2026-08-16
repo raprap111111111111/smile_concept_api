@@ -19,13 +19,13 @@ class DoctorResource extends JsonResource
             'specialization'      => $this->specialization,
             'bio'                 => $this->bio,
             'consultation_fee'    => $this->consultation_fee !== null
-                                        ? (float) $this->consultation_fee
-                                        : null,
+                ? (float) $this->consultation_fee
+                : null,
             'years_of_experience' => (int) $this->years_of_experience,
             'signature_path'      => $this->signature_path,
             'signature_url'       => $this->signature_path
-                                        ? asset('storage/' . $this->signature_path)
-                                        : null,
+                ? asset('storage/' . $this->signature_path)
+                : null,
             'is_active'           => (bool) $this->is_active,
 
             // ─── User (nested) ────────────────────────
@@ -46,9 +46,32 @@ class DoctorResource extends JsonResource
                 ];
             }),
 
-            // ─── Counts (when eager loaded) ───────────
-            'schedules_count'     => $this->whenCounted('schedules'),
-            'appointments_count'  => $this->whenCounted('appointments'),
+            // ─── Counts ───────────────────────────────
+            'schedules_count'    => $this->whenCounted('schedules'),
+            'appointments_count' => $this->whenCounted('appointments'),
+
+            // ✅ Unique patients count from appointments
+            'patients_count' => $this->when(
+                $this->relationLoaded('appointments'),
+                fn() => $this->appointments->pluck('user_id')->unique()->count()
+            ),
+
+            // ─── Schedules (nested list) ──────────────
+            'schedules' => $this->whenLoaded('schedules', function () {
+                return $this->schedules->map(fn($s) => [
+                    'id'          => $s->id,
+                    'day_of_week' => $s->day_of_week,
+                    'start_time'  => $s->start_time,
+                    'end_time'    => $s->end_time,
+                    'is_active'   => (bool) $s->is_active,
+                    'branch'      => $s->relationLoaded('branch') && $s->branch
+                        ? [
+                            'id'   => $s->branch->id,
+                            'name' => $s->branch->name,
+                          ]
+                        : null,
+                ])->values();
+            }),
 
             // ─── Timestamps ───────────────────────────
             'created_at' => $this->created_at,
