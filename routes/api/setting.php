@@ -14,3 +14,4 @@ Route::get('settings',                    [SettingController::class, 'index']);
 Route::get('settings/{key}',              [SettingController::class, 'show']);
 Route::put('settings/{key}',              [SettingController::class, 'update']);
 Route::post('settings/bulk-update',       [SettingController::class, 'bulkUpdate']);
+Route::post('settings/upload-image', [SettingController::class, 'uploadImage']);

@@ -15,6 +15,7 @@ use App\Http\Requests\v1\Setting\UpdateSettingRequest;
 use App\Http\Resources\v1\SettingResource;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
@@ -100,5 +101,26 @@ class SettingController extends Controller
         } catch (\Throwable $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }
+    }
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|image|max:2048',
+            'setting_key' => 'required|string',
+        ]);
+
+        $path = $request->file('file')->store('settings', 'public');
+
+        // ✅ Return FULL absolute URL (not relative path)
+        // asset() builds the full URL based on APP_URL in .env
+        $url = asset('storage/' . $path);
+
+        return $this->successResponse(
+            [
+                'url' => $url,
+                'path' => $path,
+            ],
+            'Image uploaded successfully.'
+        );
     }
 }
