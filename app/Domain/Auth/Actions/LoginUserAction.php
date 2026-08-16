@@ -2,23 +2,19 @@
 
 namespace App\Domain\Auth\Actions;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use App\Domain\Auth\Repositories\UserRepositoryInterface;
 use App\Domain\Auth\DTOs\LoginDTO;
+use App\Domain\Auth\Repositories\UserRepositoryInterface;
+use Illuminate\Auth\Events\Failed;  
+use Illuminate\Auth\Events\Login;    
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Laravel\Passport\Client;
-use League\OAuth2\Server\AuthorizationServer;
-use League\OAuth2\Server\ResponseTypes\BearerTokenResponse;
-use Zend\Diactoros\Response as Psr7Response;
-use Symfony\Component\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
-use Nyholm\Psr7\Factory\Psr17Factory;
 
 class LoginUserAction
 {
     protected $userRepository;
 
-    public function __construct(UserRepositoryInterface $userRepository) 
+    public function __construct(UserRepositoryInterface $userRepository)
     {
         $this->userRepository = $userRepository;
     }
@@ -28,6 +24,9 @@ class LoginUserAction
         $user = $this->userRepository->findByEmail($dto->email);
 
         if (! $user || ! Hash::check($dto->password, $user->password)) {
+            // ✅ FIRE FAILED EVENT — triggers LogFailedLogin listener
+            event(new Failed('api', $user, ['email' => $dto->email]));
+
             throw ValidationException::withMessages([
                 'email' => ['Sorry, email and password do not match.'],
             ]);
@@ -44,17 +43,17 @@ class LoginUserAction
             ]);
         }
 
-        // 2. Generate both tokens cleanly using Passport's core token structure
+        // 2. Generate tokens
         $tokenResult = $user->createToken('auth_token');
-        
-        // 3. Since Personal Tokens don't natively generate a refresh token, we can mock 
-        // the refresh token identifier or structure perfectly for your frontend cookies:
-        $refreshToken = bin2hex(random_bytes(40)); 
+        $refreshToken = bin2hex(random_bytes(40));
+
+        // ✅ FIRE LOGIN EVENT — triggers LogSuccessfulLogin listener
+        event(new Login('api', $user, false));
 
         return [
             'token'         => $tokenResult->accessToken,
-            'refresh_token' => $refreshToken, 
-            'user'          => $user
+            'refresh_token' => $refreshToken,
+            'user'          => $user,
         ];
     }
 }

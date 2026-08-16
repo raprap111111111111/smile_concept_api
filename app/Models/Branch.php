@@ -4,7 +4,6 @@
 namespace App\Models;
 
 use App\Models\Appointment;
-use App\Models\Doctor;
 use App\Models\Inventory;
 use App\Models\User;
 use App\Traits\LogsActivity;
@@ -14,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Branch extends Model
 {
-    use SoftDeletes, LogsActivity; // ✅ ADD — matches migration
+    use SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'name',
