@@ -85,6 +85,7 @@ class PermissionSeeder extends Seeder
                 'mark-completed',
                 'reopen',
                 'change-status',
+                'record-consumables',
                 'viewOwn'
             ]),
             'prescription'     => array_merge($crud, ['print', 'send', 'viewOwn']),

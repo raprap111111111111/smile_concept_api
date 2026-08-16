@@ -7,11 +7,11 @@ use App\Domain\Inventories\DTOs\ConsumptionResult;
 use App\Domain\Inventories\DTOs\InventorySettings;
 use App\Domain\Inventories\DTOs\RecordMovementDTO;
 use App\Domain\Inventories\Services\StockLedger;
+use App\Domain\Inventories\Services\StockWatchers;
 use App\Enums\StockMovementType;
 use App\Models\Appointment;
 use App\Models\Item;
 use App\Models\StockMovement;
-use App\Models\User;
 use App\Notifications\StockShortfallNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -37,6 +37,7 @@ class ConsumeAppointmentSuppliesAction
         private readonly StockLedger $ledger,
         private readonly InventorySettings $settings,
         private readonly ActivityLogger $logger,
+        private readonly StockWatchers $watchers,
     ) {}
 
     public function execute(Appointment $appointment): ConsumptionResult
@@ -184,7 +185,7 @@ class ConsumeAppointmentSuppliesAction
             'items'     => $items,
         ]);
 
-        $recipients = $this->stockWatchersAt((int) $appointment->branch_id);
+        $recipients = $this->watchers->at((int) $appointment->branch_id);
 
         if ($recipients->isNotEmpty()) {
             Notification::send(
@@ -192,23 +193,5 @@ class ConsumeAppointmentSuppliesAction
                 new StockShortfallNotification($appointment, $items),
             );
         }
-    }
-
-    /**
-     * Staff at this branch who can see stock, so the alert reaches someone who
-     * can act on it rather than every admin in the system.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection<int, User>
-     */
-    private function stockWatchersAt(int $branchId): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::query()
-            ->where(function ($query) use ($branchId): void {
-                $query->whereHas('branches', fn ($q) => $q->where('branches.id', $branchId))
-                    ->orWhere('branch_id', $branchId);
-            })
-            ->get()
-            ->filter(fn (User $user): bool => $user->can('inventory.viewAny'))
-            ->values();
     }
 }

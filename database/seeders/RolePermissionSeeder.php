@@ -76,7 +76,7 @@ class RolePermissionSeeder extends Seeder
                 'dental-chart'       => $basicCrud,
                 'clinical-note'      => array_merge($readOnly, ['finalize']),
                 'treatment'          => $basicCrud,
-                'treatment-plan'     => array_merge($basicCrud, ['send-to-patient', 'mark-completed']),
+                'treatment-plan'     => array_merge($basicCrud, ['send-to-patient', 'mark-completed', 'record-consumables']),
                 'prescription'       => array_merge($readOnly, ['print']),
                 'attachment'         => array_merge($basicCrud, ['download', 'upload']),
                 'consent-form'       => array_merge($basicCrud, ['send', 'void', 'print']),
@@ -208,7 +208,7 @@ class RolePermissionSeeder extends Seeder
                 'dental-chart'     => $basicCrud,
                 'clinical-note'    => array_merge($basicCrud, ['finalize', 'amend']),
                 'treatment'        => $readWrite,
-                'treatment-plan'   => array_merge($basicCrud, ['send-to-patient', 'mark-completed']),
+                'treatment-plan'   => array_merge($basicCrud, ['send-to-patient', 'mark-completed', 'record-consumables']),
                 'prescription'     => array_merge($basicCrud, ['print', 'send']),
                 'attachment'       => array_merge($basicCrud, ['download', 'upload']),
                 'consent-form'     => ['viewAny', 'view', 'create', 'send'],
@@ -285,7 +285,7 @@ class RolePermissionSeeder extends Seeder
                 'branch'           => $readOnly,
 
                 // ── Treatment Plans ───────────────────────────────────
-                'treatment-plan'   => array_merge($readOnly, ['send-to-patient']),
+                'treatment-plan'   => array_merge($readOnly, ['send-to-patient', 'record-consumables']),
 
                 // ── Consent Forms ─────────────────────────────────────
                 'consent-form'     => array_merge($readOnly, ['send', 'print']),

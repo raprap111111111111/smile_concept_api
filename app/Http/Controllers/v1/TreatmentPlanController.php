@@ -9,6 +9,7 @@ use App\Domain\TreatmentPlans\Actions\UpdateTreatmentPlanAction;
 use App\Domain\TreatmentPlans\Exceptions\InvalidStatusTransitionException;
 use App\Domain\TreatmentPlans\Mappers\TreatmentPlanMapper;
 use App\Domain\TreatmentPlans\Repositories\TreatmentPlanRepository;
+use App\Enums\StockMovementType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\v1\TreatmentPlan\ChangeTreatmentPlanStatusRequest;
 use App\Http\Requests\v1\TreatmentPlan\DeleteTreatmentPlanRequest;
@@ -43,8 +44,14 @@ class TreatmentPlanController extends Controller
 
     public function show(GetTreatmentPlanRequest $request, TreatmentPlan $treatmentPlan): JsonResponse
     {
+        $treatmentPlan
+            ->load(['items.treatment', 'patient', 'doctor.user'])
+            ->loadExists([
+                'stockMovements as consumables_recorded' => fn ($q) => $q->where('type', StockMovementType::CONSUMPTION),
+            ]);
+
         return $this->successResponse(
-            new TreatmentPlanResource($treatmentPlan->load(['items.treatment', 'patient', 'doctor.user'])),
+            new TreatmentPlanResource($treatmentPlan),
             'Treatment plan clinical profile retrieved.'
         );
     }

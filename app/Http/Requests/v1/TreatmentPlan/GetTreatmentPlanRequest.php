@@ -8,7 +8,7 @@ class GetTreatmentPlanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $plan = $this->route('treatment-plan');
+        $plan = $this->route('treatment_plan');
         return $plan && $this->user()->can('view', $plan);
     }
 
