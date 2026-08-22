@@ -13,11 +13,27 @@ class PatientProfileResource extends JsonResource
             'id'      => $this->id,
             'user_id' => $this->user_id,
 
+            // ─── Demographics & Address (ADDED) ──────────────────────────
+            'date_of_birth' => $this->date_of_birth,
+            'gender'        => $this->gender,
+            'civil_status'  => $this->civil_status,
+            'nationality'   => $this->nationality,
+            'occupation'    => $this->occupation,
+            'address'       => $this->address,
+            'city'          => $this->city,
+            'province'      => $this->province,
+            'postal_code'   => $this->postal_code,
+
+            // ─── Insurance & Referral (ADDED) ────────────────────────────
+            'insurance_provider' => $this->insurance_provider,
+            'insurance_number'   => $this->insurance_number,
+            'referred_by'        => $this->referred_by,
+
             // Medical
             'allergies'       => $this->allergies,
             'medical_history' => $this->medical_history,
 
-            // ✅ Null-safe enum
+            // Null-safe enum
             'blood_type' => $this->blood_type instanceof \BackedEnum
                 ? $this->blood_type->value
                 : $this->blood_type,

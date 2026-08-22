@@ -30,6 +30,22 @@ class UserResource extends JsonResource
             'patient_profile' => $profile ? [
                 'id' => $profile->id,
                 'user_id' => $profile->user_id,
+
+                // ─── Demographic & Address Fields ─────────────────────────
+                'date_of_birth' => $profile->date_of_birth,
+                'gender' => $profile->gender,
+                'civil_status' => $profile->civil_status,
+                'nationality' => $profile->nationality,
+                'occupation' => $profile->occupation,
+                'address' => $profile->address,
+                'city' => $profile->city,
+                'province' => $profile->province,
+                'postal_code' => $profile->postal_code,
+
+                // ─── Insurance ───────────────────────────────────────────
+                'insurance_provider' => $profile->insurance_provider,
+                'insurance_number' => $profile->insurance_number,
+
                 'allergies' => $profile->allergies,
                 'medical_history' => $profile->medical_history,
                 'blood_type' => $profile->blood_type,
@@ -44,6 +60,7 @@ class UserResource extends JsonResource
                 'updated_at' => $profile->updated_at,
             ] : null,
 
+            
             'branches' => $this->branches->map(function ($branch) {
                 return [
                     'id' => $branch->id,

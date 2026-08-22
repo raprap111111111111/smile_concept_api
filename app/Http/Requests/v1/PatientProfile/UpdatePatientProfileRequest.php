@@ -21,8 +21,6 @@ class UpdatePatientProfileRequest extends FormRequest
 
         return [
             // ─── User account fields ───────────────────────
-            // The edit form sends these alongside the medical fields; without
-            // rules they never reach validated() and the change is dropped.
             'name'  => ['sometimes', 'required', 'string', 'max:255'],
             'email' => [
                 'sometimes',
@@ -40,13 +38,30 @@ class UpdatePatientProfileRequest extends FormRequest
                 'exists:users,id',
                 "unique:patient_profiles,user_id,{$profileId}",
             ],
+
+            // ─── Demographics & Address ────────────────────
+            'date_of_birth' => ['sometimes', 'nullable', 'date'],
+            'gender'        => ['sometimes', 'nullable', 'string', Rule::in(['male', 'female', 'other'])],
+            'civil_status'  => ['sometimes', 'nullable', 'string', 'max:255'],
+            'nationality'   => ['sometimes', 'nullable', 'string', 'max:255'],
+            'occupation'    => ['sometimes', 'nullable', 'string', 'max:255'],
+            'address'       => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'city'          => ['sometimes', 'nullable', 'string', 'max:255'],
+            'province'      => ['sometimes', 'nullable', 'string', 'max:255'],
+            'postal_code'   => ['sometimes', 'nullable', 'string', 'max:20'],
+
+            // ─── Insurance & Referral ──────────────────────
+            'insurance_provider' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'insurance_number'   => ['sometimes', 'nullable', 'string', 'max:255'],
+            'referred_by'        => ['sometimes', 'nullable', 'string', 'max:255'],
+
+            // ─── Medical fields ────────────────────────────
             'allergies'               => ['sometimes', 'nullable', 'string', 'max:1000'],
             'medical_history'         => ['sometimes', 'nullable', 'string', 'max:2000'],
             'blood_type'              => ['sometimes', 'nullable', Rule::enum(BloodType::class)],
             'emergency_contact_name'  => ['sometimes', 'nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
 
-            // ✅ Booleans should be nullable, not required
             'requires_epinephrine_free_anesthesia' => ['sometimes', 'boolean'],
             'has_cardiac_conditions'               => ['sometimes', 'boolean'],
             'is_pregnant'                          => ['sometimes', 'boolean'],

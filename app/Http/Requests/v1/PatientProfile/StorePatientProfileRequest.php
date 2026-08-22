@@ -11,7 +11,6 @@ class StorePatientProfileRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Only admins can create new patients
         return $this->user()->can('create', PatientProfile::class);
     }
 
@@ -24,7 +23,23 @@ class StorePatientProfileRequest extends FormRequest
             'phone'    => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'min:8'],
 
-            // ─── Medical profile fields (optional) ─────────
+            // ─── Demographics & Address ────────────────────
+            'date_of_birth' => ['nullable', 'date'],
+            'gender'        => ['nullable', 'string', Rule::in(['male', 'female', 'other'])],
+            'civil_status'  => ['nullable', 'string', 'max:255'],
+            'nationality'   => ['nullable', 'string', 'max:255'],
+            'occupation'    => ['nullable', 'string', 'max:255'],
+            'address'       => ['nullable', 'string', 'max:1000'],
+            'city'          => ['nullable', 'string', 'max:255'],
+            'province'      => ['nullable', 'string', 'max:255'],
+            'postal_code'   => ['nullable', 'string', 'max:20'],
+
+            // ─── Insurance & Referral ──────────────────────
+            'insurance_provider' => ['nullable', 'string', 'max:255'],
+            'insurance_number'   => ['nullable', 'string', 'max:255'],
+            'referred_by'        => ['nullable', 'string', 'max:255'],
+
+            // ─── Medical profile fields ────────────────────
             'allergies'                            => ['nullable', 'string', 'max:1000'],
             'medical_history'                      => ['nullable', 'string', 'max:2000'],
             'blood_type'                           => ['nullable', 'string', Rule::enum(BloodType::class)],

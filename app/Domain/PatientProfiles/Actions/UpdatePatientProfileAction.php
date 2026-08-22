@@ -21,17 +21,30 @@ class UpdatePatientProfileAction
             $this->service->validateContactPhone($dto->emergencyContactPhone);
         }
 
-        // ✅ Only check duplicates if user_id is actually being changed
         if ($dto->userId !== null && $dto->userId !== $profile->user_id) {
             if ($this->repository->hasExistingProfile($dto->userId, $profile->id)) {
                 throw new \DomainException("A medical profile is already assigned to this patient.");
             }
         }
 
-        // Keyed off what the client actually sent, not off null: a nullable
-        // field such as the emergency contact has to be clearable, and
-        // filtering nulls away would make that impossible.
         $data = array_filter([
+            // Demographics & Address
+            'date_of_birth'                        => $dto->dateOfBirth,
+            'gender'                               => $dto->gender,
+            'civil_status'                         => $dto->civilStatus,
+            'nationality'                          => $dto->nationality,
+            'occupation'                           => $dto->occupation,
+            'address'                              => $dto->address,
+            'city'                                 => $dto->city,
+            'province'                             => $dto->province,
+            'postal_code'                          => $dto->postalCode,
+
+            // Insurance & Referral
+            'insurance_provider'                  => $dto->insuranceProvider,
+            'insurance_number'                    => $dto->insuranceNumber,
+            'referred_by'                          => $dto->referredBy,
+
+            // Medical fields
             'allergies'                            => $dto->allergies,
             'medical_history'                      => $dto->medicalHistory,
             'blood_type'                           => $dto->bloodType,
@@ -43,8 +56,6 @@ class UpdatePatientProfileAction
             'has_bleeding_disorders'               => $dto->hasBleedingDisorders,
         ], fn($key) => in_array($key, $dto->providedKeys, true), ARRAY_FILTER_USE_KEY);
 
-        // Reassigning the owner is not something a client clears, so it keeps
-        // the null guard.
         if ($dto->userId !== null) {
             $data['user_id'] = $dto->userId;
         }
@@ -55,8 +66,6 @@ class UpdatePatientProfileAction
             'phone' => $dto->phone,
         ], fn($key) => in_array($key, $dto->providedKeys, true), ARRAY_FILTER_USE_KEY);
 
-        // Nothing to write on the account, so stay on the single-row path and
-        // skip the transaction entirely.
         if ($userData === []) {
             return $this->repository->update($profile, $data);
         }
