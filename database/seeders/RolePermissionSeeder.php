@@ -317,9 +317,9 @@ class RolePermissionSeeder extends Seeder
                 'reminder'         => ['viewAny', 'view', 'send'],
 
                 // ── Reports ───────────────────────────────────────────
-                'report'           => ['view'],              // ✅ added
-                'patient-report'   => ['view'],              // ✅ added
-                'financial-report' => ['view'],              // ✅ added (daily cash)
+                'report'           => ['view'],              
+                'patient-report'   => ['view'],           
+                'financial-report' => ['view'],         
             ],
 
             // ═══════════════════════════════════════════════════════════
@@ -341,15 +341,15 @@ class RolePermissionSeeder extends Seeder
 
                 // Own clinical records (read-only)
                 'dental-chart'     => ['view'],
-                'treatment'        => ['view'],
+                // 'treatment'        => ['view'],
                 'treatment-plan'   => ['view', 'accept', 'reject', 'viewOwn'],
                 // RoleSeeder — patient role
                 'prescription'     => ['viewOwn'],
 
                 // Browse clinic directory — needed to choose a dentist and
                 // branch when booking. Not patient data, so listing is safe.
-                'doctor'           => ['viewAny', 'view'],
-                'branch'           => ['viewAny', 'view'],
+                // 'doctor'           => ['viewAny', 'view'],
+                // 'branch'           => ['viewAny', 'view'],
 
                 // Browse info (single item, not lists)
                 'service'          => ['view'],
