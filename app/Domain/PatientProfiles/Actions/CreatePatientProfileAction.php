@@ -24,15 +24,11 @@ class CreatePatientProfileAction
 
     public function execute(CreatePatientProfileDTO $dto): PatientProfile
     {
-        // ─── 1. Validate emergency phone ────────────────────
         if ($dto->emergencyContactPhone !== null) {
             $this->service->validateContactPhone($dto->emergencyContactPhone);
         }
 
-        // ─── 2. Create user + profile in transaction ────────
         $profile = DB::transaction(function () use ($dto) {
-
-            // Create User account
             $user = User::create([
                 'name'     => $dto->name,
                 'email'    => $dto->email,
@@ -40,7 +36,6 @@ class CreatePatientProfileAction
                 'password' => Hash::make($dto->password ?? Str::random(12)),
             ]);
 
-            // Assign patient role (Spatie)
             if (method_exists($user, 'assignRole')) {
                 $user->assignRole('patient');
             }
@@ -48,6 +43,24 @@ class CreatePatientProfileAction
             // Create medical profile
             return $this->repository->create([
                 'user_id'                              => $user->id,
+
+                // Demographics & Address
+                'date_of_birth'                        => $dto->dateOfBirth,
+                'gender'                               => $dto->gender,
+                'civil_status'                         => $dto->civilStatus,
+                'nationality'                          => $dto->nationality,
+                'occupation'                           => $dto->occupation,
+                'address'                              => $dto->address,
+                'city'                                 => $dto->city,
+                'province'                             => $dto->province,
+                'postal_code'                          => $dto->postalCode,
+
+                // Insurance & Referral
+                'insurance_provider'                  => $dto->insuranceProvider,
+                'insurance_number'                    => $dto->insuranceNumber,
+                'referred_by'                          => $dto->referredBy,
+
+                // Medical profile fields
                 'allergies'                            => $dto->allergies,
                 'medical_history'                      => $dto->medicalHistory,
                 'blood_type'                           => $dto->bloodType,

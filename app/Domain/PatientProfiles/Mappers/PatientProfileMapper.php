@@ -18,6 +18,22 @@ class PatientProfileMapper
             phone: $request->validated('phone'),
             password: $request->validated('password'),
 
+            // Demographics & Address
+            dateOfBirth: $request->validated('date_of_birth'),
+            gender: $request->validated('gender'),
+            civilStatus: $request->validated('civil_status'),
+            nationality: $request->validated('nationality'),
+            occupation: $request->validated('occupation'),
+            address: $request->validated('address'),
+            city: $request->validated('city'),
+            province: $request->validated('province'),
+            postalCode: $request->validated('postal_code'),
+
+            // Insurance & Referral
+            insuranceProvider: $request->validated('insurance_provider'),
+            insuranceNumber: $request->validated('insurance_number'),
+            referredBy: $request->validated('referred_by'),
+
             // Medical fields
             allergies: $request->validated('allergies'),
             medicalHistory: $request->validated('medical_history'),
@@ -38,6 +54,24 @@ class PatientProfileMapper
             name: $request->validated('name'),
             email: $request->validated('email'),
             phone: $request->validated('phone'),
+
+            // Demographics & Address
+            dateOfBirth: $request->validated('date_of_birth'),
+            gender: $request->validated('gender'),
+            civilStatus: $request->validated('civil_status'),
+            nationality: $request->validated('nationality'),
+            occupation: $request->validated('occupation'),
+            address: $request->validated('address'),
+            city: $request->validated('city'),
+            province: $request->validated('province'),
+            postalCode: $request->validated('postal_code'),
+
+            // Insurance & Referral
+            insuranceProvider: $request->validated('insurance_provider'),
+            insuranceNumber: $request->validated('insurance_number'),
+            referredBy: $request->validated('referred_by'),
+
+            // Medical fields
             allergies: $request->validated('allergies'),
             medicalHistory: $request->validated('medical_history'),
             bloodType: $request->validated('blood_type'),
@@ -48,8 +82,6 @@ class PatientProfileMapper
             isPregnant: $request->has('is_pregnant') ? (bool) $request->validated('is_pregnant') : null,
             hasBleedingDisorders: $request->has('has_bleeding_disorders') ? (bool) $request->validated('has_bleeding_disorders') : null,
 
-            // The rules are all 'sometimes', so validated() holds exactly the
-            // keys the client sent.
             providedKeys: array_keys($request->validated()),
         );
     }
