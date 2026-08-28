@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             NotificationTemplateSeeder::class,
             ServiceSeeder::class,
             GallerySeeder::class,
+            DoctorScheduleSeeder::class
         ]);
     }
 }

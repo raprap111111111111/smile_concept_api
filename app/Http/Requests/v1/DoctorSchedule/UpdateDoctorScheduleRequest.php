@@ -12,7 +12,7 @@ class UpdateDoctorScheduleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $schedule = $this->route('doctor-schedule');
+        $schedule = $this->route('doctor_schedule');
         return $schedule && $this->user()->can('update', $schedule);
     }
 
